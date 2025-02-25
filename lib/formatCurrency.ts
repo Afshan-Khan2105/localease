@@ -1,9 +1,9 @@
 export function formatCurrency(
     amount: number,
-    currencyCode: string = "inr"
+    currencyCode: string = "INR"
 ): string {
     try{
-        return new Intl.NumberFormat("en-GB" , {
+        return new Intl.NumberFormat("en-IN" , {
             style: "currency",
             currency: currencyCode.toUpperCase(),
         }).format(amount);

@@ -89,7 +89,7 @@ function BasketPage() {
                                                 {item.product.name}
                                             </h2>
                                             <p className="text-sm sm:text-base">
-                                                Price: Rs. {((item.product.price ?? 0) * item.quantity).toFixed(2)}
+                                                Price: &#8377;{((item.product.price ?? 0) * item.quantity).toFixed(2)}
                                             </p>
                                           </div>
                                         </div> 
@@ -114,7 +114,7 @@ function BasketPage() {
 
                     <p className="flex justify-between text-xl font-bold border-t pt-2">
                         <span>Toatal:</span>
-                        <span>Rs. {useBasketStore.getState().getTotalPrice().toFixed(2)}</span>
+                        <span>&#8377;{useBasketStore.getState().getTotalPrice().toFixed(2)}</span>
                     </p>
                 </div>
 

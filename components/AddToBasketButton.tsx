@@ -3,6 +3,8 @@
 import { Product } from "@/sanity.types";
 import useBasketStore from "@/store/store";
 import { useEffect, useState } from "react";
+import { IoMdAdd } from "react-icons/io";
+import { RiSubtractFill } from "react-icons/ri";
 
 interface AddToBasketButtonProps {
     product: Product;
@@ -36,7 +38,7 @@ function AddToBasketButton( {product, disabled}: AddToBasketButtonProps) {
                     <span
                     className={`text-xl font-bold ${itemCount === 0 ? "text-gray-400" : "text-gray-600"}`}
                     >
-                        -
+                        <RiSubtractFill/>
                     </span>
                 
                 </button>
@@ -52,7 +54,9 @@ function AddToBasketButton( {product, disabled}: AddToBasketButtonProps) {
         }`}
          disabled={disabled}
          >
-            <span className="text-xl font-bold text-white">+</span>
+            <span className="text-xl font-bold text-white">
+            <IoMdAdd />
+            </span>
          </button>
     </div>
   )
