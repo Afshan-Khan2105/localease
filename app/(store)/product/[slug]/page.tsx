@@ -21,7 +21,7 @@ async function ProductPage({params}: {params: Promise<{slug: string}> }) {
     return( 
         <div className="container mx-auto px-4 py-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-8 py-4">
-                  <div className={`relative aspect-auto overflow-hidden rounded-lg  shadow-lg ${isOutOfStock ? "opacity-50" : ""}`}>
+                  <div className={`relative aspect-square md:aspect-auto overflow-hidden rounded-lg  shadow-lg ${isOutOfStock ? "opacity-50" : ""}`}>
                       {product.image && (
                        <Image
                         src={imageUrl(product.image).url()}
