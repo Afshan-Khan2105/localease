@@ -14,12 +14,12 @@ const placeholders = [
   "Search nearby items",
   "Find local deals",
   "Shop smart today",
-  "Discover great offers",
-  "Browse trending products",
+  "Discover offers",
+  "Trending products",
   "Find it fast",
-  "Best deals near you",
+  "Deals near you",
   "Shop with ease",
-  "Quick search, big savings",
+  "Quick search",
   "Explore top picks"
 ];
 
@@ -54,19 +54,21 @@ function Header() {
   };
  
   return (
-    <header className="flex flex-wrap justify-between items-center px-4 py-2" >
+    <header className="flex flex-wrap justify-between items-center px-4 py-2 shadow-md" >
         {/* Top Row */}
 
-        <div className="flex w-full flex-wrap justify-between items-center" >
+        <div className="flex w-auto md:w-full flex-wrap justify-between  sm:gap-2 items-center " >
+
+          <div className="md:flex-none justify-between items-center gap-2 flex flex-row w-full lg:w-auto ">
            <Link
             href="/"
-            className="text-xl text-black font-bold hover:opacity-80 cursor-pointer mx-auto sm:mx-0 sm:text-2xl hover:scale-105 transition-all duration-150 "
+            className="text-xl text-black font-bold hover:opacity-80 cursor-pointer mx-auto sm:mx-0 sm:text-2xl hover:scale-105 transition-all duration-150"
 
             >
              FindIt
             </Link>
 
-            <Form action="/search" className="w-full sm:w-auto sm:flex-1 sm:mx-4 mt-2 sm:mt-0">
+            <Form action="/search" className="w-full sm:w-auto sm:flex-1 sm:mx-4  sm:mt-0">
               <div className="relative w-full">
                 {/* Input Field */}
                 <input
@@ -97,7 +99,10 @@ function Header() {
               </div>
             </Form>
 
-            <div className="flex items-center space-x-4 mt-4 sm:mt-0 flex-1 sm:flex-none" >
+            </div>
+
+            <div className="flex items-center justify-evenly space-x-4 mt-4 sm:mt-0 flex-1 sm:flex-none lg:w-auto w-full" >
+              
                 <Link href="/basket" 
                 className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 bg-zinc-800 hover:bg-zinc-900
                  text-white font-bold py-2 px-4 rounded-lg">
@@ -111,7 +116,7 @@ function Header() {
                   </span>
                 )}
                 
-                <span>My Cart</span>
+                <span className={` ${user?.passkeys.length === 0 ? "hidden md:block" : ""} `}>My Cart</span>
                 </Link>
 
                 {/* User */}
@@ -120,7 +125,7 @@ function Header() {
                       <Link href="/orders" className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2
                                                       bg-zinc-800 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg">
                         <BiPackage className=" w-5 h-5"/>
-                        <span>My Orders</span>
+                        <span className={` ${user?.passkeys.length === 0 ? "hidden md:block" : ""} `} >My Orders</span>
                                                         
                       </Link>
                    </SignedIn>
@@ -142,7 +147,7 @@ function Header() {
                     {user?.passkeys.length === 0 && (
                         <button
                             onClick={createClerkPasskey}
-                            className="bg-white hover:bg-zinc-800 hover:text-white animate-pulse text-black font-bold py-2 px-4 rounded border-zinc-400 border">
+                            className="bg-white hover:bg-zinc-800 hover:text-white animate-pulse hover:animate-none text-black font-bold py-2 px-4 rounded-lg border-zinc-700 border">
                                 Create PassKey
                         </button>
                     )}
