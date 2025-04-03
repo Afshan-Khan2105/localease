@@ -205,3 +205,4 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
     </div>
   );
 }
+  
