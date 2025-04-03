@@ -8,7 +8,9 @@ import { CgShoppingBag } from "react-icons/cg";
 import { BiPackage } from "react-icons/bi";
 import useBasketStore from "@/store/store";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, hover } from "framer-motion";
+import { MdLocationOn } from "react-icons/md";
+import { Button } from "./ui/button";
 
 const placeholders = [
   "Search nearby items",
@@ -102,6 +104,16 @@ function Header() {
             </div>
 
             <div className="flex items-center justify-evenly space-x-4 mt-4 sm:mt-0 flex-1 sm:flex-none lg:w-auto w-full" >
+
+            <Link
+              href="/nearBy"
+              className=" relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 
+                        bg-zinc-800 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300"
+            >
+              
+              <MdLocationOn className="w-6 h-6" />
+
+            </Link>
               
                 <Link href="/basket" 
                 className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 bg-zinc-800 hover:bg-zinc-900
@@ -130,7 +142,6 @@ function Header() {
                       </Link>
                    </SignedIn>
                    
-
                     {user ?(
                         <div className="flex items-center space-x-2">
                             <UserButton/>

@@ -5,6 +5,7 @@ import useBasketStore from "@/store/store";
 import { useEffect, useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import { RiSubtractFill } from "react-icons/ri";
+import { Button } from "./ui/button";
 
 interface AddToBasketButtonProps {
     product: Product;
@@ -26,7 +27,11 @@ function AddToBasketButton( {product, disabled}: AddToBasketButtonProps) {
     }
 
   return (
-    <div className="flex items-center justify-center space-x-2">
+
+    <div className="flex flex-row items-center justify-center gap-6">
+
+      <div className="flex items-center justify-center space-x-2">
+
         <button onClick={() => removeItem(product._id)}
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 ${
                     itemCount === 0
@@ -58,6 +63,9 @@ function AddToBasketButton( {product, disabled}: AddToBasketButtonProps) {
             <IoMdAdd />
             </span>
          </button>
+      </div>
+
+      <button>Add to Cart</button>
     </div>
   )
 }
