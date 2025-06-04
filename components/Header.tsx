@@ -7,10 +7,9 @@ import { FiSearch } from "react-icons/fi";
 import { CgShoppingBag } from "react-icons/cg";
 import { BiPackage } from "react-icons/bi";
 import useBasketStore from "@/store/store";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence, hover } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence} from "framer-motion";
 import { MdLocationOn } from "react-icons/md";
-import { Button } from "./ui/button";
 
 const placeholders = [
   "Search nearby items",
@@ -29,6 +28,18 @@ function Header() {
 
   const [index, setIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
+  const [width, setWidth] = useState<number>(0);
+
+  useEffect(() => {
+    // Set initial width
+    setWidth(window.innerWidth);
+
+    // Update width on resize
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (inputValue) return; // Stop animation when the user starts typing
@@ -54,6 +65,8 @@ function Header() {
      console.error("Error: ", JSON.stringify(err, null, 2));
    }
   };
+
+ 
  
   return (
     <header className="flex flex-wrap justify-between items-center px-4 py-2 shadow-md" >
@@ -128,7 +141,7 @@ function Header() {
                   </span>
                 )}
                 
-                <span className={` ${user?.passkeys.length === 0 ? "hidden md:block" : ""} `}>My Cart</span>
+                <span className={` ${width < 580 ? "hidden md:block" : ""} `}>My Cart</span>
                 </Link>
 
                 {/* User */}
@@ -137,8 +150,8 @@ function Header() {
                       <Link href="/orders" className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2
                                                       bg-zinc-800 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg">
                         <BiPackage className=" w-5 h-5"/>
-                        <span className={` ${user?.passkeys.length === 0 ? "hidden md:block" : ""} `} >My Orders</span>
-                                                        
+                        <span className={` ${ width < 580 ? "hidden md:block" : ""} `} >My Orders</span>
+
                       </Link>
                    </SignedIn>
                    
@@ -158,8 +171,8 @@ function Header() {
                     {user?.passkeys.length === 0 && (
                         <button
                             onClick={createClerkPasskey}
-                            className="bg-white hover:bg-zinc-800 hover:text-white animate-pulse hover:animate-none text-black font-bold py-2 px-4 rounded-lg border-zinc-700 border">
-                                Create PassKey
+                            className="bg-white hover:bg-zinc-800 hover:text-white animate-pulse text-sm md:text-lg  hover:animate-none text-black font-bold py-2 px-4 rounded-lg border-zinc-950 border">
+                                { width < 580 ? "PassKey" : "Create PassKey"}
                         </button>
                     )}
 

@@ -2,36 +2,28 @@ import { defineQuery } from "next-sanity";
 import { sanityFetch } from "../live";
 
 export const getAllProducts = async () => {
-  // Optimized query to fetch only the required fields from each product
   const ALL_PRODUCTS_QUERY = defineQuery(`
-      *[_type == "product"] | order(name asc) {
+    *[_type == "product"] | order(name asc) {
       _id,
       name,
-      slug,
-      image{
-        asset->{
-          url
-        }
-      },
-      images[]{
-        asset->{
-          url
-        }
-      },
+      slug { current },
+      image { asset->{ url } },
+      images[] { asset->{ url } },
       description,
       price,
       stock,
-      "categories": categories[]->,
+      "categories": categories[]-> { _id, title, slug },
       location {
         latitude,
         longitude,
         address,
-        selected {
-          lat,
-          lng
-        },
-        zoom,
         radius
+      },
+      ratings[] {
+        username,
+        score,
+        comment,
+        createdAt
       }
     }
   `);

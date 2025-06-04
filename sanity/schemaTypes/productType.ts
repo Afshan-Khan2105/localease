@@ -1,6 +1,7 @@
-import GoogleMapsInput from "@/components/GoogleMapsInput";
+// schemas/product.ts
+import { defineArrayMember, defineField, defineType } from "sanity";
 import { TrolleyIcon, PinIcon } from "@sanity/icons";
-import { defineField, defineType } from "sanity";
+import { GoogleMapsInput } from "@/components/GoogleMapsInput";
 
 export const productType = defineType({
   name: "product",
@@ -14,70 +15,104 @@ export const productType = defineType({
       type: "string",
       validation: (Rule) => Rule.required(),
     }),
-
     defineField({
       name: "slug",
       title: "Slug",
       type: "slug",
-      options: {
-        source: "name",
-        maxLength: 96,
-      },
+      options: { source: "name", maxLength: 96 },
       validation: (Rule) => Rule.required(),
     }),
-
-    // Primary image field (if needed)
     defineField({
       name: "image",
       title: "Product Image",
       type: "image",
-      options: {
-        hotspot: true,
-      },
+      options: { hotspot: true },
     }),
-
-    // Field to store multiple images
     defineField({
       name: "images",
       title: "Product Images",
       type: "array",
       of: [
-        {
+        defineArrayMember({
           type: "image",
           options: { hotspot: true },
-        },
+        })
       ],
       description: "Upload multiple images for this product",
+      validation: (Rule) => Rule.unique(),
     }),
-
     defineField({
       name: "description",
       title: "Description",
       type: "blockContent",
     }),
-
     defineField({
       name: "price",
       title: "Price",
       type: "number",
       validation: (Rule) => Rule.required().min(0),
     }),
-
     defineField({
       name: "categories",
       title: "Categories",
       type: "array",
-      of: [{ type: "reference", to: { type: "category" } }],
+      of: [
+        defineArrayMember({
+          type: "reference",
+          to: [{ type: "category" }]
+        })
+      ]
     }),
-
     defineField({
       name: "stock",
       title: "Stock",
       type: "number",
       validation: (Rule) => Rule.min(0),
     }),
-
-    // Upgraded location field with address and other details
+    defineField({
+      name: "ratings",
+      title: "Ratings & Comments",
+      type: "array",
+      of: [
+        defineArrayMember({
+          type: "object",
+          title: "Rating",
+          fields: [
+            defineField({
+              name: "username",
+              title: "Username",
+              type: "string",
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: "score",
+              title: "Score",
+              type: "number",
+              validation: (Rule) => Rule.required().min(1).max(5),
+            }),
+            defineField({
+              name: "comment",
+              title: "Comment",
+              type: "text",
+              validation: (Rule) => Rule.max(500).warning("Keep comments under 500 characters"),
+            }),
+            defineField({
+              name: "createdAt",
+              title: "Date",
+              type: "datetime",
+              readOnly: true,
+            }),
+          ],
+          preview: {
+            select: { score: "score", username: "username" },
+            prepare({ score, username }) {
+              return { title: `${score} ★ by ${username}` };
+            },
+          },
+        }),
+      ],
+      description: "User ratings and comments",
+    }),
     defineField({
       name: "location",
       title: "Location",
@@ -89,12 +124,14 @@ export const productType = defineType({
           title: "Latitude",
           type: "number",
           readOnly: true,
+          validation: (Rule) => Rule.min(-90).max(90).warning("Latitude must be between -90 and 90"),
         }),
         defineField({
           name: "longitude",
           title: "Longitude",
           type: "number",
           readOnly: true,
+          validation: (Rule) => Rule.min(-180).max(180).warning("Longitude must be between -180 and 180"),
         }),
         defineField({
           name: "address",
@@ -106,28 +143,29 @@ export const productType = defineType({
           name: "radius",
           title: "Radius (km)",
           type: "number",
-          description: "Define the area where the product is available.",
           initialValue: 5,
           validation: (Rule) => Rule.required().min(0),
         }),
       ],
-      components: {
-        input: GoogleMapsInput, // Custom component handling location (GPS + manual adjustments)
-      },
+      components: { input: GoogleMapsInput },
     }),
   ],
-
   preview: {
     select: {
       title: "name",
       media: "image",
       price: "price",
-      location: "location",
+      latitude: "location.latitude",
+      longitude: "location.longitude",
+      ratings: "ratings",
     },
-    prepare({ title, price, media, location }) {
+    prepare({ title, price, media, latitude, longitude, ratings }: any) {
+      const count = ratings?.length || 0;
+      const total = ratings?.reduce((sum: number, r: any) => sum + r.score, 0) || 0;
+      const avg = count ? (total / count).toFixed(1) : "N/A";
       return {
         title,
-        subtitle: `₹${new Intl.NumberFormat("en-IN").format(price)} - 📍 ${location?.address || "No location set"}`,
+        subtitle: `₹${new Intl.NumberFormat("en-IN").format(price)} • ★ ${avg} (${count}) • 📍${latitude?.toFixed(4) ?? "?"}, ${longitude?.toFixed(4) ?? "?"}`,
         media,
       };
     },

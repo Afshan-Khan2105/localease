@@ -5,48 +5,84 @@ import { auth } from "@clerk/nextjs/server"
 import Image from "next/image";
 import { redirect } from "next/navigation";
 
+// Define the return type from getMyOrders
+// type RawOrderItem = {
+//   product: {
+//     _id: string;
+//     name: string | null;
+//     image: { asset: { url: string | null } } | null;
+//     price: number | null;
+//   } | null;
+//   productName: string | null;
+//   productImage: { asset: { url: string | null } } | null;
+//   quantity: number | null;
+//   price: number | null;
+// };
 
-// Define Types for Order and Product
+// type RawOrder = {
+//   orderNumber: string | null;
+//   createdAt: string | null;
+//   status: "pending" | "processing" | "completed" | "cancelled" | null;
+//   totalAmount: number | null;
+//   coupon?: {
+//     discountAmount: number | null;
+//   } | null;
+//   items: RawOrderItem[] | null;
+// };
+
+// Rest of your interfaces
 interface Product {
-    product: {
-      _id: string;
-      name: string;
-      image: string;
-      price: number;
-    };
-    quantity: number;
-  }
-  
-  interface Order {
-    orderNumber: string;
-    orderDate: string;
-    status: "pending" | "paid" | "delivered" | "cancelled";
-    totalPrice: number;
-    currency: string;
-    amountDiscount?: number;
-    products: Product[];
-  }  
+  product: {
+    _id: string;
+    name: string;
+    image: string;
+    price: number;
+  };
+  quantity: number;
+  price: number;
+}
+
+interface Order {
+  orderNumber: string;
+  orderDate: string;
+  status: "pending" | "processing" | "completed" | "cancelled";
+  totalAmount: number;
+  currency: string;
+  amountDiscount?: number;
+  items: Product[];
+}  
   
 
 async function Orders() {
 
   const { userId } = await auth();
-
-  if(!userId){
-    return redirect("/");
-  } 
-  
-  // Ensure data matches the expected type
+  if(!userId) return redirect("/");
   const rawOrders = await getMyOrders(userId);
 
-  const orders: Order[] = rawOrders.map((order: Partial<Order>) => ({
+  const orders: Order[] = rawOrders.map((order) => ({
     orderNumber: order.orderNumber ?? "N/A",
-    orderDate: order.orderDate ? new Date(order.orderDate).toISOString() : "N/A",
-    status: (order.status ?? "pending") as "pending" | "paid" | "delivered" | "cancelled",
-    totalPrice: order.totalPrice ?? 0,
-    currency: order.currency ?? "USD",
-    amountDiscount: order.amountDiscount ?? 0,
-    products: Array.isArray(order.products) ? order.products : [],
+    orderDate: order.createdAt ? new Date(order.createdAt).toISOString() : "N/A",
+    status: (order.status ?? "pending") as "pending" | "processing" | "completed" | "cancelled",
+    totalAmount: order.totalAmount ?? 0,
+    currency: "INR", // Default to INR since it's not in the schema
+    amountDiscount: order.coupon?.discountAmount ?? 0,
+    items: Array.isArray(order.items) 
+      ? order.items
+          .filter((item): item is NonNullable<typeof order.items>[number] => 
+            !!item && 
+            !!item.product
+          )
+          .map(item => ({
+            product: {
+              _id: item.product?._id ?? '',
+              name: item.productName ?? item.product?.name ?? "Unknown",
+              image: item.productImage?.asset?.url ?? item.product?.image?.asset?.url ?? "",
+              price: item.price ?? item.product?.price ?? 0
+            },
+            quantity: item.quantity ?? 1,
+            price: (item.price ?? item.product?.price ?? 0) * (item.quantity ?? 1)
+          }))
+      : []
   }));
   
 
@@ -95,7 +131,7 @@ async function Orders() {
                                 <span className="text-sm mr-2">Status:</span>
                                 <span
                                   className={`px-3 py-1 rounded-full text-sm ${
-                                    order.status === "paid"
+                                    order.status === "completed"
                                     ? "bg-green-100 text-green-800"
                                     : "bg-gray-100 text-gray-800"
                                   }`}>
@@ -106,7 +142,7 @@ async function Orders() {
                                 <div className="sm:text-right">
                                     <p className="text-sm text-gray-600 mb-1">Total Amount</p>
                                     <p className="font-bold text-lg">
-                                        {formatCurrency(order.totalPrice ?? 0, order.currency)}
+                                        {formatCurrency(order.totalAmount ?? 0, order.currency)}
                                     </p>
                                 </div>
                              </div>
@@ -121,7 +157,7 @@ async function Orders() {
                                     <p className="text-sm text-gray-600">
                                         Original Subtotal: {" "}
                                         {formatCurrency(
-                                            (order.totalPrice ?? 0) + order.amountDiscount,
+                                            (order.totalAmount ?? 0) + order.amountDiscount,
                                         )}
                                     </p>
                                 </div>
@@ -134,7 +170,7 @@ async function Orders() {
                             </p>
 
                             <div className="space-y-3 sm:space-y-4">
-                                {order.products?.map((product) => (
+                                {order.items?.map((product) => (
                                   <div 
                                   key={product.product?._id}
                                   className="flex flex-row items-center justify-between gap-3 py-2 border-b last:border-b-0"

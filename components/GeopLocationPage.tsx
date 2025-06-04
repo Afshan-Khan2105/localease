@@ -1,27 +1,26 @@
 "use client";
+
 import React, { useState, useMemo, useCallback } from "react";
 import { Range } from "react-range";
 import MapsProduct from "@/components/MapsProduct";
-import { Category, Product as SanityProduct } from "@/sanity.types";
+import { Category } from "@/sanity.types";
 
-// Define a type for the formatted product – note the rename!
-interface FormattedProduct {
-  id: string;
-  name: string;
+interface ProductFromQuery {
+  _id: string;
+  name: string | null;
+  slug?: { current?: string } | null;
+  image?: { asset?: { url: string | null } | null } | null;
+  images?: { asset?: { url: string | null } | null }[] | null;
+  description?: unknown; // was any
   price: number;
-  rating: number;
-  categories?: { title: string }[];
-  location: { 
-    latitude: number; 
-    longitude: number; 
-    address?: string; 
-    radius?: number; 
-  };
-  image: string;
+  stock?: number;
+  categories?: { _id?: string; title: string; slug?: unknown }[]; // was any
+  location?: { latitude: number; longitude: number; address?: string; radius?: number };
+  ratings?: { username: string; score: number; comment?: string; createdAt: string }[];
 }
 
 interface ProductsViewProps {
-  products: SanityProduct[];
+  products: ProductFromQuery[];
   categories: Category[];
 }
 
@@ -31,47 +30,55 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
     minPrice: 0,
     maxPrice: 100000,
     minRating: 0,
-    radius: 10, // Default radius in kilometers
+    radius: 10,
   });
-
-  // For categories UI: control visible categories count
   const [showAllCategories, setShowAllCategories] = useState(false);
-
-  // Convert Sanity products to the expected format with full location data
-  const formattedProducts: FormattedProduct[] = useMemo(() => {
-    return products.map((p) => ({
-      id: p._id ?? "",
-      name: p.name ?? "Unknown",
-      price: p.price ?? 0,
-      rating: (p as any).rating ?? 0,
-      categories: Array.isArray(p.categories)
-        ? p.categories.map((cat: any) => ({ title: cat.title || "Unknown" }))
-        : [],
-      // Cast p as any so that TypeScript doesn’t complain about missing location property.
-      location: (p as any).location
-        ? {
-            latitude: (p as any).location.latitude,
-            longitude: (p as any).location.longitude,
-            address: (p as any).location.address,
-            radius: (p as any).location.radius,
-          }
-        : { latitude: 0, longitude: 0 },
-      // If p.image isn’t a string, cast it so that we can access its asset URL.
-      image: typeof p.image === "string"
-        ? p.image
-        : ((p.image as any)?.asset?.url || ""),
-    }));
-  }, [products]);
-
   const [priceRange, setPriceRange] = useState([filters.minPrice, filters.maxPrice]);
 
+  // Format products and calculate avgRating from ratings array
+  const formattedProducts = useMemo(() => {
+    return products.map((p) => {
+      const ratings = Array.isArray(p.ratings) ? p.ratings : [];
+      const avgRating =
+        ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + (r.score ?? 0), 0) / ratings.length
+          : 0;
+      return {
+        id: p._id || "",
+        name: p.name || "Unknown",
+        price: p.price || 0,
+        avgRating,
+        ratings,
+        slug: p.slug?.current || "",
+        categories: Array.isArray(p.categories)
+          ? p.categories.map((cat) => ({ title: cat.title || "Unknown" }))
+          : [],
+        location: p.location
+          ? {
+              latitude: p.location.latitude,
+              longitude: p.location.longitude,
+              address: p.location.address,
+              radius: p.location.radius,
+            }
+          : { latitude: 0, longitude: 0 },
+        image:
+          typeof p.image === "string"
+            ? p.image
+            : (p.image?.asset?.url || ""),
+      };
+    });
+  }, [products]);
+
   const handleCategoryClick = useCallback((cat: Category) => {
-    const title: string = (cat as any).title || "Unknown";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const title = (cat as any).title || "Unknown";
     setFilters((prev) => {
       const exists = prev.categories.includes(title);
       return {
         ...prev,
-        categories: exists ? prev.categories.filter((t) => t !== title) : [...prev.categories, title],
+        categories: exists
+          ? prev.categories.filter((t) => t !== title)
+          : [...prev.categories, title],
       };
     });
   }, []);
@@ -82,43 +89,58 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
 
   const handlePriceRangeChange = useCallback((values: number[]) => {
     setPriceRange(values);
-    setFilters((prev) => ({ ...prev, minPrice: values[0], maxPrice: values[1] }));
+    setFilters((prev) => ({
+      ...prev,
+      minPrice: values[0],
+      maxPrice: values[1],
+    }));
   }, []);
 
-  const handleRadiusChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters((prev) => ({ ...prev, radius: Number(e.target.value) }));
-  }, []);
+  const handleRadiusChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFilters((prev) => ({ ...prev, radius: +e.target.value }));
+    },
+    []
+  );
 
+  // Filter using avgRating
   const filteredProducts = useMemo(() => {
     return formattedProducts.filter((product) => {
       const inCategory =
         filters.categories.length === 0 ||
         product.categories?.some((cat) => filters.categories.includes(cat.title));
-      const inPriceRange = product.price >= filters.minPrice && product.price <= filters.maxPrice;
-      const inRatingRange = product.rating >= filters.minRating;
+      const inPriceRange =
+        product.price >= filters.minPrice && product.price <= filters.maxPrice;
+      const inRatingRange = product.avgRating >= filters.minRating;
       return inCategory && inPriceRange && inRatingRange;
     });
   }, [formattedProducts, filters]);
 
-  const visibleCategories = showAllCategories ? categories : categories.slice(0, 15);
+  const visibleCategories = showAllCategories
+    ? categories
+    : categories.slice(0, 15);
 
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <h4 className="text-center text-xl font-semibold py-2">Find Products Near You</h4>
-      <div className="grid grid-cols-2 md:grid-cols-4 h-screen">
-        {/* Left Panel – Filters */}
-        <div className="bg-white p-4 border-r shadow-md w-screen md:w-auto">
+    <div className="bg-gray-100 min-h-screen ">
+      <h4 className="text-center text-xl font-semibold ">
+        Find Products Near You
+      </h4>
+      <div className="grid grid-cols-2 md:grid-cols-4 h-screen ">
+        <aside className="bg-white p-4 border-r shadow-md w-[96vw] md:w-auto">
           <h2 className="text-xl font-semibold mb-4">Filters</h2>
           <label className="block text-sm font-medium mb-2">Categories</label>
           <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-            {visibleCategories.map((cat) => {
-              const title: string = (cat as any).title || "Unknown";
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {visibleCategories.map((cat: any) => {
+              const title = cat.title || "Unknown";
               const isSelected = filters.categories.includes(title);
               return (
                 <button
                   key={cat._id}
                   className={`px-3 py-1 text-sm font-medium border rounded-md ${
-                    isSelected ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"
+                    isSelected
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-800"
                   }`}
                   onClick={() => handleCategoryClick(cat)}
                 >
@@ -129,16 +151,23 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
           </div>
           {categories.length > 15 && (
             <button
-              onClick={() => setShowAllCategories((prev) => !prev)}
+              onClick={() => setShowAllCategories((p) => !p)}
               className="mt-2 text-sm text-blue-500 hover:underline"
             >
               {showAllCategories ? "Show Less" : "Show All Categories"}
             </button>
           )}
-          {/* Price Range Filter */}
+          {filters.categories.length > 0 && (
+            <button
+              className="mt-2 mb-2 px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+              onClick={() => setFilters((prev) => ({ ...prev, categories: [] }))}
+            >
+              Remove All Category Filters
+            </button>
+          )}
           <div className="mt-4">
             <label className="block text-sm font-medium">
-              Price Range: ₹{filters.minPrice} - ₹{filters.maxPrice}
+              Price: ₹{filters.minPrice} - ₹{filters.maxPrice}
             </label>
             <Range
               step={1000}
@@ -147,16 +176,37 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
               values={priceRange}
               onChange={handlePriceRangeChange}
               renderTrack={({ props, children }) => (
-                <div {...props} className="w-full h-2 bg-gray-300 rounded-md mt-2">
+                <div
+                  {...props}
+                  style={{
+                    ...props.style,
+                    height: '6px',
+                    width: '100%',
+                    backgroundColor: '#ccc',
+                    borderRadius: '4px',
+                    marginTop: '8px',
+                  }}
+                >
                   {children}
                 </div>
               )}
               renderThumb={({ props, isDragged }) => (
-                <div {...props} className={`w-4 h-4 rounded-full ${isDragged ? "bg-blue-600" : "bg-blue-400"}`} />
+                <div
+                  {...props}
+                  style={{
+                    ...props.style,
+                    height: '16px',
+                    width: '16px',
+                    borderRadius: '50%',
+                    backgroundColor: isDragged ? '#2563eb' : '#60a5fa',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                />
               )}
             />
           </div>
-          {/* Radius Filter */}
           <div className="mt-4">
             <label className="block text-sm font-medium">
               Search Radius: {filters.radius} km
@@ -171,9 +221,10 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
               className="w-full"
             />
           </div>
-          {/* Rating Filter */}
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-2">Minimum Rating</label>
+            <label className="block text-sm font-medium mb-2">
+              Minimum Rating
+            </label>
             <div className="flex space-x-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -191,18 +242,24 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
                 />
               ))}
             </div>
+            {filters.minRating > 0 && (
+              <button
+                className="mt-2 px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+                onClick={() => setFilters((prev) => ({ ...prev, minRating: 0 }))}
+              >
+                Remove Rating Filter
+              </button>
+            )}
           </div>
           <p className="mt-4 text-sm text-gray-600">
             Showing {filteredProducts.length} products
           </p>
-        </div>
+        </aside>
 
-        {/* Right Panel – Map & Product List */}
-        <div className="bg-gray-50 col-span-2 md:col-span-3 flex flex-col">
+        <main className="bg-gray-50 col-span-2 md:col-span-3 flex flex-col">
           <MapsProduct filters={filters} products={filteredProducts} />
-        </div>
+        </main>
       </div>
     </div>
   );
 }
-  

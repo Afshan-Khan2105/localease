@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { GoogleMap, Marker, Circle, OverlayView, useLoadScript } from "@react-google-maps/api";
 import { imageUrl } from "@/lib/imageUrl";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const mapContainerStyle = { width: "100%", height: "500px" };
 const defaultCenter = { lat: 28.6139, lng: 77.209 };
@@ -16,7 +18,6 @@ const mapOptions = {
   zoomControl: true,
 };
 
-// Function to calculate distance (in KM)
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -33,12 +34,13 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  rating: number;
+  avgRating: number;
+  ratings: { score: number }[];
+  slug?: string;
   categories?: { title: string }[];
-  // Always provided a default location
-  location: { 
-    latitude: number; 
-    longitude: number; 
+  location: {
+    latitude: number;
+    longitude: number;
   };
   image: string;
 }
@@ -48,7 +50,7 @@ interface Filters {
   minPrice: number;
   maxPrice: number;
   minRating: number;
-  radius: number; // In KM
+  radius: number;
 }
 
 const MapsProduct = ({ filters, products }: { filters: Filters; products: Product[] }) => {
@@ -58,8 +60,8 @@ const MapsProduct = ({ filters, products }: { filters: Filters; products: Produc
   });
 
   const [currentLocation, setCurrentLocation] = useState(defaultCenter);
+  const router = useRouter();
 
-  // Get user's current location
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -69,16 +71,14 @@ const MapsProduct = ({ filters, products }: { filters: Filters; products: Produc
     );
   }, []);
 
-  // Use the passed-in products instead of undefined "formattedProducts"
+  // Filter products by distance
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const inCategory =
         filters.categories.length === 0 ||
         product.categories?.some((cat) => filters.categories.includes(cat.title));
       const inPriceRange = product.price >= filters.minPrice && product.price <= filters.maxPrice;
-      const inRatingRange = product.rating >= filters.minRating;
-  
-      // Apply distance filter using current location
+      const inRatingRange = product.avgRating >= filters.minRating;
       const distance = getDistance(
         currentLocation.lat,
         currentLocation.lng,
@@ -86,31 +86,55 @@ const MapsProduct = ({ filters, products }: { filters: Filters; products: Produc
         product.location.longitude
       );
       const inRadius = distance <= filters.radius;
-  
       return inCategory && inPriceRange && inRatingRange && inRadius;
     });
   }, [products, filters, currentLocation]);
 
   if (!isLoaded) return <p>Loading Map...</p>;
 
+  const handleProductClick = (slug?: string) => {
+    if (slug) router.push(`/product/${slug}`);
+  };
+
   const ProductMarker = ({ product }: { product: Product }) => (
     <OverlayView
       position={{ lat: product.location.latitude, lng: product.location.longitude }}
       mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
     >
-      <div className="flex flex-col items-center transform -translate-x-1/2 -translate-y-full">
+      <div
+        className="flex flex-col items-center cursor-pointer group"
+        style={{ transform: "translate(-50%, -100%)" }}
+        onClick={() => handleProductClick(product.slug)}
+        title={product.name}
+      >
+        {/* Product Image */}
         {product.image ? (
-          <img
+          <Image
             src={imageUrl(product.image).url() || product.image}
             alt={product.name}
-            className="w-12 h-12 object-cover rounded-full border-2 border-white shadow-md"
+            width={56}
+            height={56}
+            className="w-14 h-14 object-cover rounded-full border-2 border-white shadow-md group-hover:scale-105 transition"
           />
         ) : (
-          <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+          <div className="w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center">
             No Image
           </div>
         )}
-        <div className="mt-1 bg-white px-2 py-1 rounded-md shadow-md text-xs font-semibold">
+        {/* Pointer Triangle */}
+        <div
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: "10px solid transparent",
+            borderRight: "10px solid transparent",
+            borderTop: "14px solid #2563eb", // blue pointer
+            marginTop: "-1px",
+            zIndex: -1,
+          }}
+        />
+        {/* Price Tag */}
+        <div className="mt-1 bg-white px-2 py-1 rounded-md shadow text-xs font-semibold">
           ₹{product.price}
         </div>
       </div>
@@ -138,16 +162,22 @@ const MapsProduct = ({ filters, products }: { filters: Filters; products: Produc
               <div
                 key={product.id}
                 className="min-w-[200px] p-2 border rounded-lg shadow-sm bg-gray-100 cursor-pointer"
+                onClick={() => handleProductClick(product.slug)}
+                title={product.name}
               >
                 {product.image && (
-                  <img
+                  <Image
                     src={imageUrl(product.image).url() || product.image}
                     alt={product.name}
+                    width={56}
+                    height={56}
                     className="w-full h-24 object-contain"
                   />
                 )}
                 <h4 className="text-sm font-semibold">{product.name}</h4>
-                <p className="text-xs text-gray-500">₹{product.price} | ⭐ {product.rating}</p>
+                <p className="text-xs text-gray-500">
+                  ₹{product.price} | ⭐ {product.avgRating.toFixed(1)}
+                </p>
               </div>
             ))
           ) : (

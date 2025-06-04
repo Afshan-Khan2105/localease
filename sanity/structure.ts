@@ -13,3 +13,4 @@ export const structure: StructureResolver = (S) =>
         (item) => item.getId() && !['post', 'category'].includes(item.getId()!),
       ),
     ])
+  

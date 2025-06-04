@@ -21,29 +21,36 @@ export async function createCheckoutSession(
     items: GroupedBasketItem[],
     metadata: Metadata
 ) {
-    try{
-        const itemWithoutPrice = items.filter((item => !item.product.price));
+    if (!process.env.NEXT_PUBLIC_BASE_URL) {
+        throw new Error("BASE_URL environment variable is not set");
+    }
 
-        if(itemWithoutPrice.length > 0) {
-            throw new Error("Some items do not have a price");
+    try {
+        // Validate items more strictly
+        const validItems = items.filter(
+            item => 
+                item.product && 
+                item.product._id && 
+                typeof item.product.price === 'number' &&
+                item.product.price > 0
+        );
+
+        if (!validItems.length) {
+            throw new Error("No valid items in basket");
         }
 
+        // Get or create customer
         const customers = await stripe.customers.list({
             email: metadata.customerEmail,
             limit: 1,
         });
         
-        let customerId: string | undefined;
-        if(customers.data.length > 0) {
-            customerId = customers.data[0].id;
-        }
+        const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
 
-        const baseUrl = process.env.NODE_ENV === 'production'
-        ? `https://${process.env.VERCEL_URL}`
-        : `${process.env.NEXT_PUBLIC_BASE_URL}`;
+        // Set base URL
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-
-          
+        // Create Stripe session
         const session = await stripe.checkout.sessions.create({
             customer: customerId,
             customer_creation: customerId ? undefined : "always",
@@ -53,31 +60,32 @@ export async function createCheckoutSession(
             allow_promotion_codes: true,
             success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&orderNumber=${metadata.orderNumber}`,
             cancel_url: `${baseUrl}/basket`,
-
-            line_items: items.map((item) => ({
-
+            line_items: validItems.map((item) => ({
                 price_data: {
                     currency: "inr",
-                    unit_amount: Math.round(item.product.price! * 100),
+                    unit_amount: Math.round((item.product?.price || 0) * 100),
                     product_data: {
-                        name: item.product.name || "Unnamed Product",
-                        description: `Product ID: ${item.product._id}`,
+                        name: item.product?.name || "Unnamed Product",
+                        description: `Product ID: ${item.product?._id}`,
                         metadata: {
-                            id: item.product._id,
+                            id: item.product?._id,
                         },
-                        images: item.product.image
-                        ? [imageUrl(item.product.image).url()]
-                        : undefined,
+                        images: item.product?.image
+                            ? [imageUrl(item.product.image).url()]
+                            : undefined,
                     },
                 },
                 quantity: item.quantity,
             })),
         });
+
+        if (!session?.url) {
+            throw new Error("Failed to create checkout session");
+        }
          
         return session.url;
-
     } catch (error) {
-      console.error("Error creating checkout session", error);
-      throw error;
+        console.error("Error creating checkout session:", error);
+        throw error;
     }
 }

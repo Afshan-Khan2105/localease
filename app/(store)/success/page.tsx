@@ -9,9 +9,9 @@ import { useEffect } from "react";
 
 function SuccessPage() {
     const searchParams = useSearchParams();
-    const orderNumber = searchParams.get("orderNumber");
+    const orderNumber = searchParams?.get("orderNumber") ?? "";
     const clearBasket = useBasketStore((state) => state.clearBasket);
-    const sessionId = searchParams.get("session_id");
+    const sessionId = searchParams?.get("session_id") ?? "";
 
 
     useEffect(() => {
@@ -25,7 +25,7 @@ function SuccessPage() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50">
             <div className="bg-white p-12 rounded-xl shadow-lg max-w-2xl w-full mx-4">
                 <div className="flex justify-center mb-8">
-                    <div className="h-16 w-16 b-green-100 rounded-full flex items-center justify-center">
+                    <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
                         <svg className="h-8 w-8 text-green-600"
                                fill="none"
                                stroke="currentColor"
@@ -40,7 +40,7 @@ function SuccessPage() {
                 </div>
 
                 <h1 className="text-2xl font-bold mb-6 text-center">
-                    Thankyou for Your Order!
+                    Thank you for Your Order!
                 </h1>
 
                 <div className="border-t border-b border-gray-200 py-6 mb-6">
@@ -69,7 +69,7 @@ function SuccessPage() {
 
                 <div className="space-y-4">
                     <p className="text-gray-600 text-center">
-                        A confirmation email has been sent to you registered email adddress.
+                        A confirmation email has been sent to your registered email address.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -77,7 +77,7 @@ function SuccessPage() {
                             <Link href="/orders">View Order Details</Link>
                         </Button>
                         <Button asChild variant="outline">
-                            <Link href="/">Countinue Shopping</Link>
+                            <Link href="/">Continue Shopping</Link>
                         </Button>
                     </div>
                 </div>

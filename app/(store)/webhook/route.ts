@@ -1,4 +1,3 @@
-
 import { Metadata } from "@/actions/createCheckOutSession";
 import stripe from "@/lib/stripe";
 import { backendClient } from "@/sanity/lib/backendClient";
@@ -16,7 +15,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({error: "No Signature" }, { status: 400 });
     }
 
-    const webhookSecret = process.env.SRIPE_WEBHOOK_SECRET;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if(!webhookSecret){
         console.log("! Stripe webhook secret is not set.");
@@ -57,55 +56,62 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({received: true});
 }
 
-async function createOrderInSanity(session: Stripe.Checkout.Session){
+async function createOrderInSanity(session: Stripe.Checkout.Session) {
     const {
         id,
         amount_total,
-        currency,
         metadata,
-        payment_intent,
-        customer,
-        total_details,
     } = session;
 
     const { orderNumber, customerName, customerEmail, clerkUserId } = metadata as Metadata;
 
+    // Get line items with expanded product info
     const lineItemsWithProduct = await stripe.checkout.sessions.listLineItems(
         id,
-        {
-            expand: ["data.price.product"],
-        }
+        { expand: ["data.price.product"] }
     );
 
-    const sanityProducts = lineItemsWithProduct.data.map((item) => ({
-        _key: crypto.randomUUID(),
-        product: {
-            _type: "reference",
-            _ref: (item.price?.product as Stripe.Product)?.metadata?.id,
-        },
+    // Map line items to Sanity order items
+    const sanityItems = lineItemsWithProduct.data.map((item) => {
+        let sanityProductId: string | undefined = undefined;
 
-        quantity: item.quantity || 0,
-    }));
+        // If expanded, get from metadata
+        if (
+            typeof item.price?.product === "object" &&
+            item.price?.product &&
+            "metadata" in item.price.product &&
+            (item.price.product as Stripe.Product).metadata?.id
+        ) {
+            sanityProductId = (item.price.product as Stripe.Product).metadata.id;
+        }
 
+        return {
+            _key: crypto.randomUUID(),
+            product: sanityProductId
+                ? {
+                      _type: "reference",
+                      _ref: sanityProductId,
+                  }
+                : undefined,
+            quantity: item.quantity || 0,
+            price: item.price?.unit_amount ? item.price.unit_amount / 100 : 0,
+        };
+    });
+        
+    console.log("Sanity items to be created:", sanityItems);
+
+    // Create order in Sanity
     const order = await backendClient.create({
         _type: "order",
         orderNumber,
-        stripeCheckoutSessionId: id,
-        stripePaymentIntentId: payment_intent,
+        customerEmail,
         customerName,
-        stripeCustomerId: customer,
-        clerkUserId : clerkUserId,
-        email: customerEmail,
-        currency,
-        amountDiscount: total_details?.amount_discount
-        ? total_details.amount_discount / 100
-        : 0,
+        clerkUserId,
+        items: sanityItems,
+        totalAmount: amount_total ? amount_total / 100 : 0,
+        status: "completed",
+        createdAt: new Date().toISOString(),
+    });
 
-        products: sanityProducts,
-        totalPrice: amount_total? amount_total / 100 : 0,
-        status: "paid",
-        orderDate: new Date().toISOString(),
-     });
-
-     return order
+    return order;
 }
