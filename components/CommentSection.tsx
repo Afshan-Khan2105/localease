@@ -10,17 +10,16 @@ interface Rating {
 }
 
 interface Props {
-  productId: string;
   ratings: Rating[];
   user: {
     id: string;
     fullName?: string | null;
     emailAddresses: Array<{ emailAddress: string }>;
   } | null | undefined;
-  onNewComment: (score: number, comment: string) => Promise<void>; // Add this line
+  onNewComment: (score: number, comment: string) => Promise<void>;
 }
 
-export default function CommentSection({ productId, ratings, user, onNewComment }: Props) {
+export default function CommentSection({ ratings, user, onNewComment }: Props) {
   const [score, setScore] = useState<number>(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -30,26 +29,13 @@ export default function CommentSection({ productId, ratings, user, onNewComment 
     if (!score || !comment.trim() || !user) return;
     setSubmitting(true);
 
-    const rating = {
-      username: user.fullName || user.emailAddresses[0]?.emailAddress || "Anonymous",
-      score,
-      comment,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Only call the API
-    await fetch("/api/addRating", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, rating }),
-    });
-
-    // Call the onNewComment prop
-    await onNewComment(score, comment);
-
-    setScore(0);
-    setComment("");
-    setSubmitting(false);
+    try {
+      await onNewComment(score, comment);
+      setScore(0);
+      setComment("");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

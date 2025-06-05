@@ -53,7 +53,13 @@ interface Filters {
   radius: number;
 }
 
-const MapsProduct = ({ filters, products }: { filters: Filters; products: Product[] }) => {
+interface Props {
+  filters: Filters;
+  products: Product[];
+  onDisplayCountChange: (count: number) => void;
+}
+
+const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
@@ -89,6 +95,21 @@ const MapsProduct = ({ filters, products }: { filters: Filters; products: Produc
       return inCategory && inPriceRange && inRatingRange && inRadius;
     });
   }, [products, filters, currentLocation]);
+
+  // Add this useEffect to report back the final filtered count
+  useEffect(() => {
+    const productsWithinRadius = products.filter((product) => {
+      if (!product.location) return false;
+      const distance = getDistance(
+        currentLocation.lat,
+        currentLocation.lng,
+        product.location.latitude,
+        product.location.longitude
+      );
+      return distance <= filters.radius;
+    });
+    onDisplayCountChange(productsWithinRadius.length);
+  }, [products, filters.radius, currentLocation, onDisplayCountChange]);
 
   if (!isLoaded) return <p>Loading Map...</p>;
 

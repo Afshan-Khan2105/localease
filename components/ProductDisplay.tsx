@@ -61,20 +61,23 @@ export default function ProductDisplay({ product }: { product: Product }) {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data.ratings)) {
-          setRatings(data.ratings.map((rating: Rating) => ({
-            _key: rating._key,
-            username: rating.username || "Anonymous",
-            score: Number(rating.score) || 0,
-            comment: rating.comment || "",
-            createdAt: rating.createdAt || new Date().toISOString()
-          })));
-        }
+      if (!res.ok) {
+        throw new Error('Failed to add rating');
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data.ratings)) {
+        setRatings(data.ratings.map((rating: Rating) => ({
+          _key: rating._key,
+          username: rating.username || "Anonymous",
+          score: Number(rating.score) || 0,
+          comment: rating.comment || "",
+          createdAt: rating.createdAt || new Date().toISOString()
+        })));
       }
     } catch (error) {
       console.error('Error adding rating:', error);
+      // Optionally add error handling UI here
     }
   };
   
@@ -122,7 +125,6 @@ export default function ProductDisplay({ product }: { product: Product }) {
           </div>
           <AddToCartSection product={product} isOutOfStock={isOutOfStock} />
           <CommentSection
-            productId={product._id}
             ratings={ratings}
             user={user}
             onNewComment={handleNewComment}

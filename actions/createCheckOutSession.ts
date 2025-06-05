@@ -21,8 +21,13 @@ export async function createCheckoutSession(
     items: GroupedBasketItem[],
     metadata: Metadata
 ) {
-    if (!process.env.NEXT_PUBLIC_BASE_URL) {
-        throw new Error("BASE_URL environment variable is not set");
+    // Get the base URL dynamically
+    const baseUrl = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NEXT_PUBLIC_BASE_URL;
+
+    if (!baseUrl) {
+        throw new Error("Base URL is not set");
     }
 
     try {
@@ -47,10 +52,7 @@ export async function createCheckoutSession(
         
         const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
 
-        // Set base URL
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-
-        // Create Stripe session
+        // Create Stripe session with dynamic base URL
         const session = await stripe.checkout.sessions.create({
             customer: customerId,
             customer_creation: customerId ? undefined : "always",

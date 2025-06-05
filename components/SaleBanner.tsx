@@ -53,7 +53,7 @@ export default function SaleBanner() {
 
   return (
     <div
-      className="relative"
+      className="relative mx-4 my-2"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -69,7 +69,7 @@ export default function SaleBanner() {
         />
       )}
       <div
-        className="bg-gradient-to-r from-zinc-600 to-zinc-900 text-white  mx-4 mt-4 rounded-lg shadow-lg flex items-center"
+        className="bg-gradient-to-r from-zinc-600 to-zinc-900 text-white rounded-lg shadow-lg flex items-center"
         style={{
           backgroundImage: sale.backgroundImage?.asset?.url
             ? `url(${sale.backgroundImage.asset.url}), linear-gradient(to right, #52525b, #09090b)`
@@ -113,7 +113,7 @@ export default function SaleBanner() {
           >
             &#8594;
           </button> */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="absolute z-50 bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
             {sales.map((_, idx) => (
               <button
                 key={idx}

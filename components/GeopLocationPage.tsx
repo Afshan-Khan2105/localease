@@ -34,6 +34,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
   });
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [priceRange, setPriceRange] = useState([filters.minPrice, filters.maxPrice]);
+  const [displayedProductCount, setDisplayedProductCount] = useState(0);
 
   // Format products and calculate avgRating from ratings array
   const formattedProducts = useMemo(() => {
@@ -121,12 +122,12 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
     : categories.slice(0, 15);
 
   return (
-    <div className="bg-gray-100 min-h-screen ">
+    <div className="bg-gray-100 min-h-screen overflow-x-hidden">
       <h4 className="text-center text-xl font-semibold ">
         Find Products Near You
       </h4>
       <div className="grid grid-cols-2 md:grid-cols-4 h-screen ">
-        <aside className="bg-white p-4 border-r shadow-md w-[96vw] md:w-auto">
+        <aside className="bg-white p-4 md:border-r-2 shadow-md w-[100vw] md:w-auto">
           <h2 className="text-xl font-semibold mb-4">Filters</h2>
           <label className="block text-sm font-medium mb-2">Categories</label>
           <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
@@ -252,12 +253,16 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
             )}
           </div>
           <p className="mt-4 text-sm text-gray-600">
-            Showing {filteredProducts.length} products
+            Showing {displayedProductCount} products
           </p>
         </aside>
 
         <main className="bg-gray-50 col-span-2 md:col-span-3 flex flex-col">
-          <MapsProduct filters={filters} products={filteredProducts} />
+          <MapsProduct
+            filters={filters}
+            products={filteredProducts}
+            onDisplayCountChange={setDisplayedProductCount}
+          />
         </main>
       </div>
     </div>
