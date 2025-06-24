@@ -37,7 +37,7 @@
     "react-leaflet": "^4.2.1",
     "react-range": "^1.10.0",
     "sanity": "^3.75.1",
-    "stripe": "^17.6.0",
+    "stripe": "^17.7.0",
     "styled-components": "^6.1.15",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",

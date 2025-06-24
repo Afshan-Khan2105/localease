@@ -62,9 +62,9 @@ export async function createCheckoutSession(
             allow_promotion_codes: true,
             success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}&orderNumber=${metadata.orderNumber}`,
             cancel_url: `${baseUrl}/basket`,
-            line_items: validItems.map((item) => ({
+            line_items: items.map((item) => ({
                 price_data: {
-                    currency: "inr",
+                    currency: "inr",    
                     unit_amount: Math.round((item.product?.price || 0) * 100),
                     product_data: {
                         name: item.product?.name || "Unnamed Product",

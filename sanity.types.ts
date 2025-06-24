@@ -68,56 +68,6 @@ export type Geopoint = {
   alt?: number;
 };
 
-export type Order = {
-  _id: string;
-  _type: "order";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  orderNumber?: string;
-  customerName?: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  shippingAddress?: string;
-  items?: Array<{
-    product?: {
-      _ref: string;
-      _type: "reference";
-      _weak?: boolean;
-      [internalGroqTypeReferenceTo]?: "product";
-    };
-    productName?: string;
-    productImage?: {
-      asset?: {
-        _ref: string;
-        _type: "reference";
-        _weak?: boolean;
-        [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
-      };
-      hotspot?: SanityImageHotspot;
-      crop?: SanityImageCrop;
-      _type: "image";
-    };
-    quantity?: number;
-    price?: number;
-    total?: number;
-    _key: string;
-  }>;
-  totalAmount?: number;
-  paymentStatus?: "pending" | "paid" | "failed" | "refunded";
-  paymentMethod?: "cod" | "card" | "upi" | "netbanking" | "wallet";
-  status?: "pending" | "processing" | "shipped" | "delivered" | "completed" | "cancelled" | "returned";
-  coupon?: {
-    _ref: string;
-    _type: "reference";
-    _weak?: boolean;
-    [internalGroqTypeReferenceTo]?: "sale";
-  };
-  orderNotes?: string;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
 export type Sale = {
   _id: string;
   _type: "sale";
@@ -142,6 +92,35 @@ export type Sale = {
     crop?: SanityImageCrop;
     _type: "image";
   };
+};
+
+export type Order = {
+  _id: string;
+  _type: "order";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  orderNumber?: string;
+  stripeCheckoutSessionId?: string;
+  StripePaymentIntentId?: string;
+  customerName?: string;
+  StripeCustomerId?: string;
+  clerkUserId?: string;
+  email?: string;
+  amountDiscount?: number;
+  products?: Array<{
+    product?: {
+      _ref: string;
+      _type: "reference";
+      _weak?: boolean;
+      [internalGroqTypeReferenceTo]?: "product";
+    };
+    quantity?: number;
+    _key: string;
+  }>;
+  totalPrice?: number;
+  status?: "paid" | "pending" | "processing" | "completed" | "cancelled";
+  orderDate?: string;
 };
 
 export type Product = {
@@ -334,19 +313,22 @@ export type SanityImageMetadata = {
   isOpaque?: boolean;
 };
 
-export type AllSanitySchemaTypes = SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityFileAsset | Geopoint | Order | Sale | Product | Category | Slug | BlockContent | SanityImageCrop | SanityImageHotspot | SanityImageAsset | SanityAssetSourceData | SanityImageMetadata;
+export type AllSanitySchemaTypes = SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityFileAsset | Geopoint | Sale | Order | Product | Category | Slug | BlockContent | SanityImageCrop | SanityImageHotspot | SanityImageAsset | SanityAssetSourceData | SanityImageMetadata;
 export declare const internalGroqTypeReferenceTo: unique symbol;
-// Source: ./sanity/lib/orders/getMyOrders.ts
+// Source: ./sanity/lib/orders/getMyOrders.tsx
 // Variable: MY_ORDER_QUERY
-// Query: *[_type == "order" && clerkUserId == $userId] | order(createdAt desc) {      _id,      orderNumber,      customerName,      customerEmail,      customerPhone,      shippingAddress,      items[] {        product->{          _id,          name,          image { asset->{url} },          price        },        productName,        productImage { asset->{url} },        quantity,        price,        total      },      totalAmount,      paymentStatus,      paymentMethod,      status,      coupon->{        _id,        title,        discountAmount,        couponCode      },      orderNotes,      createdAt,      updatedAt    }
+// Query: *[_type == "order" && clerkUserId == $userId] {      _id,      orderNumber,      stripeCheckoutSessionId,      StripePaymentIntentId,      customerName,      StripeCustomerId,      clerkUserId,      email,      amountDiscount,      products[] {        product->{          _id,          name,          image { asset->{url} },          price        },        quantity      },      totalPrice,      status,      orderDate    }
 export type MY_ORDER_QUERYResult = Array<{
   _id: string;
   orderNumber: string | null;
+  stripeCheckoutSessionId: string | null;
+  StripePaymentIntentId: string | null;
   customerName: string | null;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  shippingAddress: string | null;
-  items: Array<{
+  StripeCustomerId: string | null;
+  clerkUserId: string | null;
+  email: string | null;
+  amountDiscount: number | null;
+  products: Array<{
     product: {
       _id: string;
       name: string | null;
@@ -357,29 +339,11 @@ export type MY_ORDER_QUERYResult = Array<{
       } | null;
       price: number | null;
     } | null;
-    productName: string | null;
-    productImage: {
-      asset: {
-        url: string | null;
-      } | null;
-    } | null;
     quantity: number | null;
-    price: number | null;
-    total: number | null;
   }> | null;
-  totalAmount: number | null;
-  paymentStatus: "failed" | "paid" | "pending" | "refunded" | null;
-  paymentMethod: "card" | "cod" | "netbanking" | "upi" | "wallet" | null;
-  status: "cancelled" | "completed" | "delivered" | "pending" | "processing" | "returned" | "shipped" | null;
-  coupon: {
-    _id: string;
-    title: string | null;
-    discountAmount: number | null;
-    couponCode: string | null;
-  } | null;
-  orderNotes: string | null;
-  createdAt: string | null;
-  updatedAt: string | null;
+  totalPrice: number | null;
+  status: "cancelled" | "completed" | "paid" | "pending" | "processing" | null;
+  orderDate: string | null;
 }>;
 
 // Source: ./sanity/lib/products/getAllCategories.ts
@@ -714,7 +678,7 @@ export type PRODUCT_SEARCH_QUERYResult = Array<{
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
-    "\n    *[_type == \"order\" && clerkUserId == $userId] | order(createdAt desc) {\n      _id,\n      orderNumber,\n      customerName,\n      customerEmail,\n      customerPhone,\n      shippingAddress,\n      items[] {\n        product->{\n          _id,\n          name,\n          image { asset->{url} },\n          price\n        },\n        productName,\n        productImage { asset->{url} },\n        quantity,\n        price,\n        total\n      },\n      totalAmount,\n      paymentStatus,\n      paymentMethod,\n      status,\n      coupon->{\n        _id,\n        title,\n        discountAmount,\n        couponCode\n      },\n      orderNotes,\n      createdAt,\n      updatedAt\n    }\n  ": MY_ORDER_QUERYResult;
+    "\n    *[_type == \"order\" && clerkUserId == $userId] {\n      _id,\n      orderNumber,\n      stripeCheckoutSessionId,\n      StripePaymentIntentId,\n      customerName,\n      StripeCustomerId,\n      clerkUserId,\n      email,\n      amountDiscount,\n      products[] {\n        product->{\n          _id,\n          name,\n          image { asset->{url} },\n          price\n        },\n        quantity\n      },\n      totalPrice,\n      status,\n      orderDate\n    }\n  ": MY_ORDER_QUERYResult;
     "\n    *[_type == \"category\"] | order(title asc) {\n      _id,\n      title,\n      slug { current },\n      description\n    }\n  ": ALL_CATEGORIES_QUERYResult;
     "\n    *[_type == \"product\"] | order(name asc) {\n      _id,\n      name,\n      slug { current },\n      image { asset->{ url } },\n      images[] { asset->{ url } },\n      description,\n      price,\n      stock,\n      \"categories\": categories[]-> { _id, title, slug },\n      location {\n        latitude,\n        longitude,\n        address,\n        radius\n      },\n      ratings[] {\n        username,\n        score,\n        comment,\n        createdAt\n      }\n    }\n  ": ALL_PRODUCTS_QUERYResult;
     "\n        *[\n            _type == \"product\" && slug.current == $slug\n        ] | order(name asc) [0]\n        ": PRODUCT_BY_TD_QUERYResult;

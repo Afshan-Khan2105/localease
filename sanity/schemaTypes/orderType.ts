@@ -12,13 +12,23 @@ export const orderType = defineType({
             validation: (Rule) => Rule.required(),
         }),
         defineField({
+            name: "stripeCheckoutSessionId",
+            title: "Stripe Checkout Session ID",
+            type: "string",
+        }),
+        defineField({
+            name: "StripePaymentIntentId",
+            title: "Stripe Payment Intent ID",
+            type: "string",
+        }),
+        defineField({
             name: "customerName",
             title: "Customer Name",
             type: "string",
         }),
         defineField({
-            name: "customerEmail",
-            title: "Customer Email",
+            name: "StripeCustomerId",
+            title: "Stripe Customer ID",
             type: "string",
         }),
         defineField({
@@ -27,7 +37,17 @@ export const orderType = defineType({
             type: "string",
         }),
         defineField({
-            name: "items",
+            name: "email",
+            title: "Customer Email",
+            type: "string",
+        }),
+        defineField({
+            name: "amountDiscount",
+            title: "Amount Discount",
+            type: "number",
+        }),
+        defineField({
+            name: "products",
             title: "Order Items",
             type: "array",
             of: [
@@ -36,20 +56,13 @@ export const orderType = defineType({
                     fields: [
                         { name: "product", type: "reference", to: [{ type: "product" }] },
                         { name: "quantity", type: "number" },
-                        { name: "price", type: "number" },
-                        { name: "productName", type: "string" },
-                        { 
-                            name: "productImage", 
-                            type: "image",
-                            options: { hotspot: true }
-                        },
                     ],
                 },
             ],
         }),
         defineField({
-            name: "totalAmount",
-            title: "Total Amount",
+            name: "totalPrice",
+            title: "Total Price",
             type: "number",
         }),
         defineField({
@@ -58,6 +71,7 @@ export const orderType = defineType({
             type: "string",
             options: {
                 list: [
+                    { title: "Paid", value: "paid" },
                     { title: "Pending", value: "pending" },
                     { title: "Processing", value: "processing" },
                     { title: "Completed", value: "completed" },
@@ -66,20 +80,8 @@ export const orderType = defineType({
             },
         }),
         defineField({
-            name: "paymentStatus",
-            title: "Payment Status",
-            type: "string",
-            options: {
-                list: [
-                    { title: "Pending", value: "pending" },
-                    { title: "Paid", value: "paid" },
-                    { title: "Failed", value: "failed" },
-                ],
-            },
-        }),
-        defineField({
-            name: "createdAt",
-            title: "Created At",
+            name: "orderDate",
+            title: "Order Date",
             type: "datetime",
         }),
     ],

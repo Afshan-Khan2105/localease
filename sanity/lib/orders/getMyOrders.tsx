@@ -7,49 +7,38 @@ export async function getMyOrders(userId: string) {
   }
 
   const MY_ORDER_QUERY = defineQuery(`
-    *[_type == "order" && clerkUserId == $userId] | order(createdAt desc) {
+    *[_type == "order" && clerkUserId == $userId] | order(orderDate)  {
       _id,
       orderNumber,
+      stripeCheckoutSessionId,
+      StripePaymentIntentId,
       customerName,
-      customerEmail,
-      customerPhone,
-      shippingAddress,
-      items[] {
+      StripeCustomerId,
+      clerkUserId,
+      email,
+      amountDiscount,
+      products[] {
         product->{
           _id,
           name,
           image { asset->{url} },
           price
         },
-        productName,
-        productImage { asset->{url} },
-        quantity,
-        price,
-        total
+        quantity
       },
-      totalAmount,
-      paymentStatus,
-      paymentMethod,
+      totalPrice,
       status,
-      coupon->{
-        _id,
-        title,
-        discountAmount,
-        couponCode
-      },
-      orderNotes,
-      createdAt,
-      updatedAt
+      orderDate
     }
   `);
 
   try {
-    const order = await sanityFetch({
+    const orders = await sanityFetch({
       query: MY_ORDER_QUERY,
       params: { userId },
     });
 
-    return order.data || [];
+    return orders || [];
   } catch (error) {
     console.log("Error fetching orders: ", error);
     throw new Error("Error fetching orders");
