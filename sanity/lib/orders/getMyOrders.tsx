@@ -2,21 +2,12 @@ import { defineQuery } from "next-sanity";
 import { sanityFetch } from "../live";
 
 export async function getMyOrders(userId: string) {
-  if (!userId) {
-    throw new Error("User ID is required");
-  }
+  if (!userId) throw new Error("User ID is required");
 
   const MY_ORDER_QUERY = defineQuery(`
-    *[_type == "order" && clerkUserId == $userId] | order(orderDate)  {
+    *[_type == "order" && clerkUserId == $userId] | order(orderDate desc) {
       _id,
       orderNumber,
-      stripeCheckoutSessionId,
-      StripePaymentIntentId,
-      customerName,
-      StripeCustomerId,
-      clerkUserId,
-      email,
-      amountDiscount,
       products[] {
         product->{
           _id,
@@ -37,7 +28,6 @@ export async function getMyOrders(userId: string) {
       query: MY_ORDER_QUERY,
       params: { userId },
     });
-
     return orders || [];
   } catch (error) {
     console.log("Error fetching orders: ", error);

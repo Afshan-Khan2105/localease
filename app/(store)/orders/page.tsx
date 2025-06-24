@@ -30,18 +30,7 @@ export default async function Orders() {
   const { userId } = await auth();
   if (!userId) return redirect("/");
 
-  const { data: rawOrders = [] } = await getMyOrders(userId);
-
-  // Transform rawOrders to match the Order type
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orders: Order[] = (rawOrders as any[]).map((order) => ({
-    orderNumber: order.orderNumber ?? "",
-    orderDate: order.orderDate ?? undefined,
-    status: order.status ?? undefined,
-    totalPrice: order.totalPrice ?? undefined,
-    amountDiscount: order.amountDiscount ?? undefined,
-    products: order.products ?? [],
-  }));
+  const { data: orders = [] }: { data: Order[] } = await getMyOrders(userId);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
