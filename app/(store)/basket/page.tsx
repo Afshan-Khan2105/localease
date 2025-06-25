@@ -48,19 +48,15 @@ function BasketPage() {
       return;
     }
 
-    if (!user?.emailAddresses[0]?.emailAddress) {
-      toast.error("No email address found");
-      return;
-    }
-
+    
     setIsLoading(true);
 
     try {
       const metadata: Metadata = {
         orderNumber: crypto.randomUUID(),
         customerName: user?.fullName ?? "Unknown",
-        customerEmail: user.emailAddresses[0].emailAddress,
-        clerkUserId: user.id,
+        customerEmail: user?.emailAddresses[0].emailAddress ?? "Unknown",
+        clerkUserId: user!.id,
       };
 
       const checkoutUrl = await createCheckoutSession(groupedItems, metadata);

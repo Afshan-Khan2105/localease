@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { backendClient } from "@/sanity/lib/backendClient";
+import { serverClient } from "@/sanity/lib/serverClient";
 
 // Helper to generate a random key
 function randomKey() {
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Add a unique _key to the rating
     const ratingWithKey = { ...rating, _key: randomKey() };
 
-    const updatedProduct = await backendClient
+    const updatedProduct = await serverClient
       .patch(productId)
       .setIfMissing({ ratings: [] })
       .append("ratings", [ratingWithKey])

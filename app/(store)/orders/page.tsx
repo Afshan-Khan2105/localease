@@ -30,7 +30,8 @@ export default async function Orders() {
   const { userId } = await auth();
   if (!userId) return redirect("/");
 
-  const { data: orders = [] }: { data: Order[] } = await getMyOrders(userId);
+  const { data } = await getMyOrders(userId);
+  const orders = data as Order[];
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">

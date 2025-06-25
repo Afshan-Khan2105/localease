@@ -1,4 +1,4 @@
-'use server'
+"use server";
 
 import { imageUrl } from "@/lib/imageUrl";
 import stripe from "@/lib/stripe";
@@ -68,11 +68,11 @@ export async function createCheckoutSession(
                     unit_amount: Math.round((item.product?.price || 0) * 100),
                     product_data: {
                         name: item.product?.name || "Unnamed Product",
-                        description: `Product ID: ${item.product?._id}`,
+                        description: `Product ID: ${item.product._id}`,
                         metadata: {
-                            id: item.product?._id,
+                            id: item.product._id,
                         },
-                        images: item.product?.image
+                        images: item.product.image
                             ? [imageUrl(item.product.image).url()]
                             : undefined,
                     },

@@ -317,15 +317,8 @@ export type AllSanitySchemaTypes = SanityImagePaletteSwatch | SanityImagePalette
 export declare const internalGroqTypeReferenceTo: unique symbol;
 // Source: ./sanity/lib/orders/getMyOrders.tsx
 // Variable: MY_ORDER_QUERY
-// Query: *[_type == "order" || clerkUserId == $userId] | order(orderDate desc) {      _id,      orderNumber,      products[] {        product->{          _id,          name,          image { asset->{url} },          price        },        quantity      },      totalPrice,      status,      orderDate    }
+// Query: *[_type == "order" && clerkUserId == $userId] | order(orderDate desc) {      _id,      orderNumber,      products[] {        product->{          _id,          name,          image { asset->{url} },          price        },        quantity      },      totalPrice,      status,      orderDate    }
 export type MY_ORDER_QUERYResult = Array<{
-  _id: string;
-  orderNumber: null;
-  products: null;
-  totalPrice: null;
-  status: null;
-  orderDate: null;
-} | {
   _id: string;
   orderNumber: string | null;
   products: Array<{
@@ -678,7 +671,7 @@ export type PRODUCT_SEARCH_QUERYResult = Array<{
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
-    "\n    *[_type == \"order\" || clerkUserId == $userId] | order(orderDate desc) {\n      _id,\n      orderNumber,\n      products[] {\n        product->{\n          _id,\n          name,\n          image { asset->{url} },\n          price\n        },\n        quantity\n      },\n      totalPrice,\n      status,\n      orderDate\n    }\n  ": MY_ORDER_QUERYResult;
+    "\n    *[_type == \"order\" && clerkUserId == $userId] | order(orderDate desc) {\n      _id,\n      orderNumber,\n      products[] {\n        product->{\n          _id,\n          name,\n          image { asset->{url} },\n          price\n        },\n        quantity\n      },\n      totalPrice,\n      status,\n      orderDate\n    }\n  ": MY_ORDER_QUERYResult;
     "\n    *[_type == \"category\"] | order(title asc) {\n      _id,\n      title,\n      slug { current },\n      description\n    }\n  ": ALL_CATEGORIES_QUERYResult;
     "\n    *[_type == \"product\"] | order(name asc) {\n      _id,\n      name,\n      slug { current },\n      image { asset->{ url } },\n      images[] { asset->{ url } },\n      description,\n      price,\n      stock,\n      \"categories\": categories[]-> { _id, title, slug },\n      location {\n        latitude,\n        longitude,\n        address,\n        radius\n      },\n      ratings[] {\n        username,\n        score,\n        comment,\n        createdAt\n      }\n    }\n  ": ALL_PRODUCTS_QUERYResult;
     "\n        *[\n            _type == \"product\" && slug.current == $slug\n        ] | order(name asc) [0]\n        ": PRODUCT_BY_TD_QUERYResult;

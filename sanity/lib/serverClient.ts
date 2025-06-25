@@ -6,5 +6,6 @@ export const serverClient = createClient({
   dataset,
   apiVersion,
   useCdn: false,
-  token: process.env.SANITY_API_TOKEN, // Use the secret token for write access
+  token: process.env.SANITY_API_WRITE_TOKEN,
+ // Use the secret token for write access
 });
