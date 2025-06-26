@@ -1,13 +1,17 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
-import { GoogleMap, Marker, Circle, OverlayView, useLoadScript } from "@react-google-maps/api";
+import { GoogleMap, Marker, Circle, OverlayView, useLoadScript, DirectionsRenderer } from "@react-google-maps/api";
 import { imageUrl } from "@/lib/imageUrl";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { TbGpsFilled } from "react-icons/tb";
+import { IoIosList } from "react-icons/io";
+import { MdInventory } from "react-icons/md";
+import { PiShoppingBagOpenFill } from "react-icons/pi";
+
+const libraries: ("places")[] = ["places"];
 
 const mapContainerStyle = { width: "100%", height: "500px" };
-const defaultCenter = { lat: 28.6139, lng: 77.209 };
-const libraries: ("places")[] = ["places"];
 
 const mapOptions = {
   styles: [
@@ -41,6 +45,7 @@ interface Product {
   location: {
     latitude: number;
     longitude: number;
+    address?: string;
   };
   image: string;
 }
@@ -62,22 +67,40 @@ interface Props {
 const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries,
+      libraries,
   });
 
-  const [currentLocation, setCurrentLocation] = useState(defaultCenter);
+  const [pointerLocation, setPointerLocation] = useState({ lat: 28.6139, lng: 77.209 });
+const [gpsActive, setGpsActive] = useState(false);
+  const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const router = useRouter();
 
+  // Get device location on mount
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCurrentLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        const loc = { lat: position.coords.latitude, lng: position.coords.longitude };
+        setPointerLocation(loc);
+        setGpsLocation(loc);
+        setGpsActive(true);
       },
       () => console.warn("Unable to fetch location")
     );
   }, []);
 
-  // Filter products by distance
+  // Hydrate from localStorage on mount (client only)
+  useEffect(() => {
+    const savedPointer = localStorage.getItem("findit-pointerLocation");
+    if (savedPointer) setPointerLocation(JSON.parse(savedPointer));
+    const savedGps = localStorage.getItem("findit-gpsActive");
+    if (savedGps) setGpsActive(JSON.parse(savedGps));
+  }, []);
+
+  // Filtering logic
+  const centerLocation = gpsActive && gpsLocation ? gpsLocation : pointerLocation;
+
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const inCategory =
@@ -86,37 +109,130 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
       const inPriceRange = product.price >= filters.minPrice && product.price <= filters.maxPrice;
       const inRatingRange = product.avgRating >= filters.minRating;
       const distance = getDistance(
-        currentLocation.lat,
-        currentLocation.lng,
+        centerLocation.lat,
+        centerLocation.lng,
         product.location.latitude,
         product.location.longitude
       );
       const inRadius = distance <= filters.radius;
       return inCategory && inPriceRange && inRatingRange && inRadius;
     });
-  }, [products, filters, currentLocation]);
+  }, [products, filters, centerLocation]);
 
-  // Add this useEffect to report back the final filtered count
+  // Update display count
   useEffect(() => {
-    const productsWithinRadius = products.filter((product) => {
-      if (!product.location) return false;
-      const distance = getDistance(
-        currentLocation.lat,
-        currentLocation.lng,
-        product.location.latitude,
-        product.location.longitude
-      );
-      return distance <= filters.radius;
-    });
-    onDisplayCountChange(productsWithinRadius.length);
-  }, [products, filters.radius, currentLocation, onDisplayCountChange]);
+    onDisplayCountChange(filteredProducts.length);
+  }, [filteredProducts, onDisplayCountChange]);
+
+  // Save pointerLocation and gpsActive to localStorage on change
+  useEffect(() => {
+    localStorage.setItem("findit-pointerLocation", JSON.stringify(pointerLocation));
+  }, [pointerLocation]);
+  useEffect(() => {
+    localStorage.setItem("findit-gpsActive", JSON.stringify(gpsActive));
+  }, [gpsActive]);
 
   if (!isLoaded) return <p>Loading Map...</p>;
 
-  const handleProductClick = (slug?: string) => {
-    if (slug) router.push(`/product/${slug}`);
+  // Unified handler for setting pointer location and disabling GPS
+  const handleSetPointer = (lat: number, lng: number) => {
+    setPointerLocation({ lat, lng });
+    setGpsActive(false);
+    setDirections(null);
+    setSelectedProduct(null);
   };
 
+  // Map click: set pointer and disable GPS
+  const handleMapClick = (e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      handleSetPointer(e.latLng.lat(), e.latLng.lng());
+    }
+  };
+
+  // Pointer drag: update pointer and disable GPS
+  const handlePointerDragEnd = (e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      handleSetPointer(e.latLng.lat(), e.latLng.lng());
+    }
+  };
+
+  // Toggle GPS mode and fetch current device location accurately
+  const handleCurrentLocationClick = () => {
+    if (gpsActive) {
+      setGpsActive(false);
+      setDirections(null);
+      setSelectedProduct(null);
+      return;
+    }
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const loc = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setGpsLocation(loc);
+        setPointerLocation(loc);
+        setGpsActive(true);
+        setDirections(null);
+        setSelectedProduct(null);
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          alert("Location permission denied. Please allow location access.");
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          alert("Location information is unavailable.");
+        } else if (error.code === error.TIMEOUT) {
+          alert("Location request timed out. Try again.");
+        } else {
+          alert("Unable to fetch your current location.");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 50000,      // 20 seconds for better accuracy
+        maximumAge: 0,       // Do not use cached location
+      }
+    );
+  };
+
+  // Show route from selected product to current location (GPS or pointer)
+  const handleShowRoute = (product: Product) => {
+    const origin = {
+      lat: product.location.latitude,
+      lng: product.location.longitude,
+    };
+    const destination = gpsActive && gpsLocation
+      ? gpsLocation
+      : pointerLocation;
+
+    const directionsService = new window.google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin,
+        destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK" && result) {
+          setDirections(result);
+        } else {
+          alert("Could not find route.");
+        }
+      }
+    );
+  };
+
+  // Product marker click: open info card
+  const handleProductMarkerClick = (product: Product) => {
+    setSelectedProduct(product);
+    setDirections(null);
+  };
+
+  // Product marker component
   const ProductMarker = ({ product }: { product: Product }) => (
     <OverlayView
       position={{ lat: product.location.latitude, lng: product.location.longitude }}
@@ -125,56 +241,231 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
       <div
         className="flex flex-col items-center cursor-pointer group"
         style={{ transform: "translate(-50%, -100%)" }}
-        onClick={() => handleProductClick(product.slug)}
+        onClick={() => handleProductMarkerClick(product)}
         title={product.name}
       >
-        {/* Product Image */}
-        {product.image ? (
-          <Image
-            src={imageUrl(product.image).url() || product.image}
-            alt={product.name}
-            width={56}
-            height={56}
-            className="w-14 h-14 object-cover rounded-full border-2 border-white shadow-md group-hover:scale-105 transition"
-          />
-        ) : (
-          <div className="w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center">
-            No Image
-          </div>
-        )}
-        {/* Pointer Triangle */}
+        <Image
+          src={imageUrl(product.image).url() || product.image}
+          alt={product.name}
+          width={80}
+          height={80}
+          className="w-12 h-12 object-cover rounded-full border-2 border-white shadow-md group-hover:scale-105 transition"
+        />
+       
+        {/* Optional: pointer triangle below image */}
         <div
           style={{
             width: 0,
             height: 0,
-            borderLeft: "10px solid transparent",
-            borderRight: "10px solid transparent",
-            borderTop: "14px solid #2563eb", // blue pointer
-            marginTop: "-1px",
             zIndex: -1,
+            borderLeft: "8px solid transparent",
+            borderRight: "8px solid transparent",
+            borderTop: "12px solid #2563eb",
+            marginTop: "-2px",
           }}
         />
-        {/* Price Tag */}
-        <div className="mt-1 bg-white px-2 py-1 rounded-md shadow text-xs font-semibold">
-          ₹{product.price}
-        </div>
+         <span className="text-xs text-center  bg-gray-100 rounded-sm px-1 shadow-md">
+        &#8377;{product.price}
+        </span>
       </div>
     </OverlayView>
   );
 
   return (
     <div className="p-4">
-      <GoogleMap mapContainerStyle={mapContainerStyle} zoom={13} center={currentLocation} options={mapOptions}>
-        <Circle
-          center={currentLocation}
-          radius={filters.radius * 1000}
-          options={{ fillColor: "rgba(0, 0, 255, 0.2)", strokeColor: "blue" }}
-        />
+      <div className="flex  gap-2 mt-2 mb-2">
+          {/* GPS Button */}
+        <button
+          onClick={handleCurrentLocationClick}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md shadow ${
+            gpsActive ? "bg-zinc-800" : "bg-zinc-800"
+          } text-white hover:bg-zinc-900 transition`}
+        >
+          <TbGpsFilled size={20} />
+          <span className="sm:block hidden">{gpsActive ? "Turn Off Navigation" : "Navigate your Location"}</span>
+        </button>
+
+        {/* List Your Product */}
+        <button
+          // onClick={() => router.push("/product/list")}
+          className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
+        >
+          <IoIosList size={20}/>
+          <span className="sm:block hidden">List Your Product</span>
+        </button>
+
+        {/* Listed Products */}
+        <button
+          onClick={() => router.push("/orders?tab=products")}
+          className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
+        >
+          <MdInventory size={20} />
+          <span className="sm:block hidden">Listed Inventory</span>
+        </button>
+
+        {/* Order Requests */}
+        <button
+          onClick={() => router.push("/orders?tab=requests")}
+          className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
+        >
+          {/* Inbox icon */}
+          <PiShoppingBagOpenFill size={20} />
+          <span className="sm:block hidden">Order Requests</span>
+        </button>
+      </div>
+
+      <GoogleMap
+        mapContainerStyle={mapContainerStyle}
+        zoom={15}
+        center={centerLocation}
+        options={mapOptions}
+        onClick={handleMapClick}
+      >
+        {/* Always show the circle at the current center */}
+        {(gpsActive && gpsLocation) || (!gpsActive && pointerLocation) ? (
+          <Circle
+            center={gpsActive && gpsLocation ? gpsLocation : pointerLocation}
+            radius={filters.radius * 1000}
+            options={{
+              fillColor: "rgba(0, 0, 255, 0.3)",
+              strokeColor: "blue",
+              strokeOpacity: 0.5,
+              strokeWeight: 1,
+            }}
+          />
+        ) : null}
+        {/* Show pointer marker if not using GPS */}
+        {!gpsActive && (
+          <Marker
+            position={pointerLocation}
+            draggable
+            onDragEnd={handlePointerDragEnd}
+            icon="http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+          />
+        )}
+        {/* Show blue GPS dot if GPS is active */}
+        {gpsActive && gpsLocation && (
+          <OverlayView
+            position={gpsLocation}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          >
+            <div
+            style={{
+              position: "relative",
+              width: 48,
+              height: 48,
+              pointerEvents: "none",
+              transform: "translate(-50%, -50%)", // Center the overlay at the GPS location
+            }}
+          >
+      {/* Beam (triangle/cone) pointing north */}
+         <svg
+            width={40}
+            height={40}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 10,
+            }}
+          >
+            <defs>
+              <linearGradient id="beam-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fff" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#2563eb" stopOpacity="0.25" />
+              </linearGradient>
+            </defs>
+            <polygon
+              points="24,6 10,38 38,38"
+              fill="url(#beam-gradient)"
+            />
+          </svg>
+          {/* Blue dot */}
+          <div
+            style={{
+              position: "absolute",
+              left: 16,
+              top: 16,
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: "#2563eb",
+              border: "2px solid white",
+              boxShadow: "0 0 8px 2px #2563eb88",
+            }}
+          />
+    </div>
+          </OverlayView>
+        )}
+        
+        {/* Product markers */}
         {filteredProducts.map((product) => (
           <ProductMarker key={product.id} product={product} />
         ))}
-        <Marker position={currentLocation} icon="http://maps.google.com/mapfiles/ms/icons/blue-dot.png" />
+
+        {/* Show route if available */}
+        {directions && <DirectionsRenderer directions={directions} options={{ polylineOptions: { strokeColor: "#2563eb", strokeWeight: 5 } }} />}
+
+        {/* Product Info Card Overlay */}
+        {selectedProduct && (
+          <OverlayView
+            position={{
+              lat: selectedProduct.location.latitude - 0.000015, // Slightly offset to avoid overlap with marker
+              lng: selectedProduct.location.longitude + 0.00015, // Slightly offset to avoid overlap with marker
+            }}
+            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+          >
+            <div
+              className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 z-50 w-[80vw] max-w-xs"
+              style={{
+                transform: "translate(-10px, -120%)",
+                minWidth: 200,
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <Image
+                  src={imageUrl(selectedProduct.image).url() || selectedProduct.image}
+                  alt={selectedProduct.name}
+                  width={64}
+                  height={64}
+                  className="rounded-lg object-cover"
+                />
+                <div>
+                  <h4 className="text-lg font-bold">{selectedProduct.name}</h4>
+                  <p className="text-sm text-gray-600">
+                    {selectedProduct.location.address || "No address available"}
+                  </p>
+                  <span className="text-gray-600 font-semibold">₹{selectedProduct.price}  |  </span>
+                  <span className="text-gray-600">⭐ {selectedProduct.avgRating.toFixed(1)}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                  onClick={() => router.push(`/product/${selectedProduct.slug}`)}
+                >
+                 View Product
+                </button>
+                <button
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                  onClick={() => handleShowRoute(selectedProduct)}
+                >
+                  Route
+                </button>
+                <button
+                  className="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300"
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    setDirections(null);
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </OverlayView>
+        )}
       </GoogleMap>
+
       <div className="mt-4">
         <h3 className="text-lg font-bold">Products Nearby</h3>
         <div className="overflow-x-auto flex gap-4 p-2 bg-white shadow-md">
@@ -182,19 +473,20 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
             filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="min-w-[200px] p-2 border rounded-lg shadow-sm bg-gray-100 cursor-pointer"
-                onClick={() => handleProductClick(product.slug)}
+                className="min-w-[200px] p-2 border rounded-lg shadow-md cursor-pointer"
+                onClick={() => router.push(`/product/${product.slug}`)}
                 title={product.name}
               >
                 {product.image && (
                   <Image
                     src={imageUrl(product.image).url() || product.image}
                     alt={product.name}
-                    width={56}
-                    height={56}
-                    className="w-full h-24 object-contain"
+                    width={640}
+                    height={640}
+                    className="w-full h-28 object-contain"
                   />
                 )}
+
                 <h4 className="text-sm font-semibold">{product.name}</h4>
                 <p className="text-xs text-gray-500">
                   ₹{product.price} | ⭐ {product.avgRating.toFixed(1)}
@@ -202,7 +494,7 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
               </div>
             ))
           ) : (
-            <p className="text-gray-500">No products found in this category.</p>
+            <p className="text-gray-500 rounded-sm">No products found in this category.</p>
           )}
         </div>
       </div>

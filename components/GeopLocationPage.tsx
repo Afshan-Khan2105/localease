@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Range } from "react-range";
 import MapsProduct from "@/components/MapsProduct";
 import { Category } from "@/sanity.types";
@@ -24,17 +24,33 @@ interface ProductsViewProps {
   categories: Category[];
 }
 
+interface Filters {
+  categories: string[];
+  minPrice: number;
+  maxPrice: number;
+  minRating: number;
+  radius: number;
+}
+
 export default function GeopLocationPage({ products, categories }: ProductsViewProps) {
-  const [filters, setFilters] = useState({
-    categories: [] as string[],
+  const [filters, setFilters] = useState<Filters>({
+    categories: [],
     minPrice: 0,
-    maxPrice: 100000,
+    maxPrice: 10000,
     minRating: 0,
-    radius: 10,
+    radius: 1,
   });
   const [showAllCategories, setShowAllCategories] = useState(false);
-  const [priceRange, setPriceRange] = useState([filters.minPrice, filters.maxPrice]);
+  const [priceRange, setPriceRange] = useState([0, 10000]);
   const [displayedProductCount, setDisplayedProductCount] = useState(0);
+
+  // Hydrate filters from localStorage on mount (client only)
+  useEffect(() => {
+    const saved = localStorage.getItem("findit-filters");
+    if (saved) setFilters(JSON.parse(saved));
+    const savedRange = localStorage.getItem("findit-priceRange");
+    if (savedRange) setPriceRange(JSON.parse(savedRange));
+  }, []);
 
   // Format products and calculate avgRating from ratings array
   const formattedProducts = useMemo(() => {
@@ -73,24 +89,24 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
   const handleCategoryClick = useCallback((cat: Category) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const title = (cat as any).title || "Unknown";
-    setFilters((prev) => {
+    setFilters((prev: typeof filters) => {
       const exists = prev.categories.includes(title);
       return {
         ...prev,
         categories: exists
-          ? prev.categories.filter((t) => t !== title)
+          ? prev.categories.filter((t: string) => t !== title)
           : [...prev.categories, title],
       };
     });
   }, []);
 
   const handleRatingClick = useCallback((rating: number) => {
-    setFilters((prev) => ({ ...prev, minRating: rating }));
+    setFilters((prev: typeof filters) => ({ ...prev, minRating: rating }));
   }, []);
 
   const handlePriceRangeChange = useCallback((values: number[]) => {
     setPriceRange(values);
-    setFilters((prev) => ({
+    setFilters((prev: typeof filters) => ({
       ...prev,
       minPrice: values[0],
       maxPrice: values[1],
@@ -99,7 +115,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
 
   const handleRadiusChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFilters((prev) => ({ ...prev, radius: +e.target.value }));
+      setFilters((prev: typeof filters) => ({ ...prev, radius: +e.target.value }));
     },
     []
   );
@@ -161,7 +177,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
           {filters.categories.length > 0 && (
             <button
               className="mt-2 mb-2 px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
-              onClick={() => setFilters((prev) => ({ ...prev, categories: [] }))}
+              onClick={() => setFilters((prev: typeof filters) => ({ ...prev, categories: [] }))}
             >
               Remove All Category Filters
             </button>
@@ -171,26 +187,43 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
               Price: ₹{filters.minPrice} - ₹{filters.maxPrice}
             </label>
             <Range
-              step={1000}
+              step={100}
               min={0}
-              max={10000000}
+              max={1000000}
               values={priceRange}
               onChange={handlePriceRangeChange}
-              renderTrack={({ props, children }) => (
-                <div
-                  {...props}
-                  style={{
-                    ...props.style,
-                    height: '6px',
-                    width: '100%',
-                    backgroundColor: '#ccc',
-                    borderRadius: '4px',
-                    marginTop: '8px',
-                  }}
-                >
-                  {children}
-                </div>
-              )}
+              renderTrack={({ props, children }) => {
+                // Calculate the percentage positions of the thumbs
+                const min = 0;
+                const max = 1000000;
+                const [left, right] = priceRange;
+                const leftPercent = ((left - min) / (max - min)) * 100;
+                const rightPercent = ((right - min) / (max - min)) * 100;
+
+                return (
+                  <div
+                    {...props}
+                    style={{
+                      ...props.style,
+                      height: '6px',
+                      width: '100%',
+                      borderRadius: '4px',
+                      marginTop: '8px',
+                      background: `linear-gradient(
+                        to right,
+                        #ccc 0%,
+                        #ccc ${leftPercent}%,
+                        #2563eb ${leftPercent}%,
+                        #2563eb ${rightPercent}%,
+                        #ccc ${rightPercent}%,
+                        #ccc 100%
+                      )`,
+                    }}
+                  >
+                    {children}
+                  </div>
+                );
+              }}
               renderThumb={({ props, isDragged }) => (
                 <div
                   {...props}
@@ -215,7 +248,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
             <input
               type="range"
               min="1"
-              max="500"
+              max="50"
               step="1"
               value={filters.radius}
               onChange={handleRadiusChange}
@@ -246,7 +279,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
             {filters.minRating > 0 && (
               <button
                 className="mt-2 px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
-                onClick={() => setFilters((prev) => ({ ...prev, minRating: 0 }))}
+                onClick={() => setFilters((prev: typeof filters) => ({ ...prev, minRating: 0 }))}
               >
                 Remove Rating Filter
               </button>
