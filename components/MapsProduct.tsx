@@ -75,6 +75,7 @@ const [gpsActive, setGpsActive] = useState(false);
   const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const router = useRouter();
 
   // Get device location on mount
@@ -168,6 +169,7 @@ const [gpsActive, setGpsActive] = useState(false);
       alert("Geolocation is not supported by your browser.");
       return;
     }
+    setGpsLoading(true); // Start loading
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const loc = {
@@ -179,8 +181,10 @@ const [gpsActive, setGpsActive] = useState(false);
         setGpsActive(true);
         setDirections(null);
         setSelectedProduct(null);
+        setGpsLoading(false); // Stop loading
       },
       (error) => {
+        setGpsLoading(false); // Stop loading on error
         if (error.code === error.PERMISSION_DENIED) {
           alert("Location permission denied. Please allow location access.");
         } else if (error.code === error.POSITION_UNAVAILABLE) {
@@ -193,8 +197,8 @@ const [gpsActive, setGpsActive] = useState(false);
       },
       {
         enableHighAccuracy: true,
-        timeout: 50000,      // 20 seconds for better accuracy
-        maximumAge: 0,       // Do not use cached location
+        timeout: 50000,
+        maximumAge: 0,
       }
     );
   };
@@ -312,6 +316,29 @@ const [gpsActive, setGpsActive] = useState(false);
           <PiShoppingBagOpenFill size={20} />
           <span className="sm:block hidden">Order Requests</span>
         </button>
+
+       {/* ...your buttons... */}
+        {gpsLoading &&  (
+          <span className="flex items-center ml-2">
+            <svg className="animate-spin h-6 w-6 text-blue-500" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            <span className="ml-2 text-blue-400 text-sm">Locating...</span>
+          </span>
+        )}
       </div>
 
       <GoogleMap

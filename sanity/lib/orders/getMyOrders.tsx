@@ -8,6 +8,7 @@ export async function getMyOrders(userId: string) {
     *[_type == "order" && clerkUserId == $userId] | order(orderDate desc) {
       _id,
       orderNumber,
+      amountDiscount,
       products[] {
         product->{
           _id,
