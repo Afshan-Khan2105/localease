@@ -13,6 +13,10 @@ export const getAllProducts = async () => {
       price,
       stock,
       "categories": categories[]-> { _id, title, slug },
+       owner {
+      id,
+      email
+      },
       location {
         latitude,
         longitude,

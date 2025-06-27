@@ -55,13 +55,17 @@ function ProductThumb({ product }: { product: Product }) {
         </h2>
 
         <p className="mb-2 text-xs md:text-sm text-gray-700 line-clamp-2 min-h-[2.5em]">
-          {product.description
-            ?.map((block) =>
-              block._type === "block"
-                ? block.children?.map((child) => child.text).join("")
-                : ""
-            )
-            .join(" ") || "No description available"}
+          {Array.isArray(product.description)
+            ? product.description
+                .map((block) =>
+                  block._type === "block"
+                    ? block.children?.map((child) => child.text).join("")
+                    : ""
+                )
+                .join(" ") || "No description available"
+            : typeof product.description === "string"
+            ? product.description
+            : "No description available"}
         </p>
 
         <div className="flex items-center justify-between mt-auto">

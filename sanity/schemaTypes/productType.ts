@@ -9,6 +9,27 @@ export const productType = defineType({
   type: "document",
   icon: TrolleyIcon,
   fields: [
+        defineField({
+          name: "owner",
+          title: "Owner",
+          type: "object",
+          fields: [
+            defineField({
+              name: "id",
+              title: "Owner ID",
+              type: "string",
+              description: "Unique identifier for the owner",
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: "email",
+              title: "Owner Email",
+              type: "string",
+              description: "Email address of the owner",
+              validation: (Rule) => Rule.required().email(),
+            }),
+          ],
+        }),
     defineField({
       name: "name",
       title: "Product Name",

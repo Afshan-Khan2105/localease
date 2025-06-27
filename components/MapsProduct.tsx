@@ -291,7 +291,14 @@ const [gpsActive, setGpsActive] = useState(false);
 
         {/* List Your Product */}
         <button
-          // onClick={() => router.push("/product/list")}
+          onClick={() => {
+            const coords = gpsActive && gpsLocation
+              ? gpsLocation
+              : pointerLocation;
+            router.push(
+              `/productList?lat=${coords.lat}&lng=${coords.lng}`
+            );
+          }}
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
           <IoIosList size={20}/>
@@ -442,19 +449,19 @@ const [gpsActive, setGpsActive] = useState(false);
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
           >
             <div
-              className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 z-50 w-[80vw] max-w-xs"
+              className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 z-50 w-[60vw] max-w-72"
               style={{
                 transform: "translate(-10px, -120%)",
                 minWidth: 200,
               }}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 <Image
                   src={imageUrl(selectedProduct.image).url() || selectedProduct.image}
                   alt={selectedProduct.name}
-                  width={64}
-                  height={64}
-                  className="rounded-lg object-cover"
+                  width={84}
+                  height={84}
+                  className="rounded-lg object-cover shadow-md"
                 />
                 <div>
                   <h4 className="text-lg font-bold">{selectedProduct.name}</h4>
@@ -465,21 +472,21 @@ const [gpsActive, setGpsActive] = useState(false);
                   <span className="text-gray-600">⭐ {selectedProduct.avgRating.toFixed(1)}</span>
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
+              <div className="flex gap-2 mt-4 ml-4">
                 <button
-                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow-md hover:bg-blue-200"
                   onClick={() => router.push(`/product/${selectedProduct.slug}`)}
                 >
                  View Product
                 </button>
                 <button
-                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow-md hover:bg-blue-200"
                   onClick={() => handleShowRoute(selectedProduct)}
                 >
                   Route
                 </button>
                 <button
-                  className="bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300"
+                  className="bg-gray-100 text-zinc-700 px-3 py-1 rounded shadow-md hover:bg-gray-200"
                   onClick={() => {
                     setSelectedProduct(null);
                     setDirections(null);
