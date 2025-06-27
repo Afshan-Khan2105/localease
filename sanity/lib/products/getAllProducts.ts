@@ -42,3 +42,4 @@ export const getAllProducts = async () => {
     return [];
   }
 };
+

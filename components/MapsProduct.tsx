@@ -8,6 +8,7 @@ import { TbGpsFilled } from "react-icons/tb";
 import { IoIosList } from "react-icons/io";
 import { MdInventory } from "react-icons/md";
 import { PiShoppingBagOpenFill } from "react-icons/pi";
+import Link from "next/link";
 
 const libraries: ("places")[] = ["places"];
 
@@ -306,23 +307,23 @@ const [gpsActive, setGpsActive] = useState(false);
         </button>
 
         {/* Listed Products */}
-        <button
-          onClick={() => router.push("/orders?tab=products")}
+        <Link
+          href="/Inventory"
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
           <MdInventory size={20} />
           <span className="sm:block hidden">Listed Inventory</span>
-        </button>
+        </Link>
 
         {/* Order Requests */}
-        <button
-          onClick={() => router.push("/orders?tab=requests")}
+        <Link
+          href="/orders?tab=requests"
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
           {/* Inbox icon */}
           <PiShoppingBagOpenFill size={20} />
           <span className="sm:block hidden">Order Requests</span>
-        </button>
+        </Link>
 
        {/* ...your buttons... */}
         {gpsLoading &&  (

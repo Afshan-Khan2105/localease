@@ -224,21 +224,25 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
                   </div>
                 );
               }}
-              renderThumb={({ props, isDragged }) => (
-                <div
-                  {...props}
-                  style={{
-                    ...props.style,
-                    height: '16px',
-                    width: '16px',
-                    borderRadius: '50%',
-                    backgroundColor: isDragged ? '#2563eb' : '#60a5fa',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                />
-              )}
+              renderThumb={({ props, isDragged }) => {
+                const { key, ...rest } = props;
+                return (
+                  <div
+                    key={key}
+                    {...rest}
+                    style={{
+                      ...props.style,
+                      height: '16px',
+                      width: '16px',
+                      borderRadius: '50%',
+                      backgroundColor: isDragged ? '#2563eb' : '#60a5fa',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  />
+                );
+              }}
             />
           </div>
           <div className="mt-4">

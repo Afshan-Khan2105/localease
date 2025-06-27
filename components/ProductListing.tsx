@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { FaCamera, FaMicrophone, FaArrowUp } from "react-icons/fa"; // Removed FaArrowRight
@@ -22,19 +22,34 @@ type Category = {
   title: string;
 };
 
+type ProductFormState = {
+  name: string;
+  slug: string;
+  image: File | null;
+  images: File[];
+  description: string;
+  price: string;
+  stock: string;
+  categories: string[];
+  location: { latitude?: number; longitude?: number };
+  owner: {
+    id: string;
+    email: string;
+  };
+};
+
 export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }) {
   const { user, isSignedIn } = useUser();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProductFormState>({
     name: "",
     slug: "",
-    image: null as File | null,
-    images: [] as File[],
+    image: null,
+    images: [],
     description: "",
     price: "",
     stock: "",
-    categories: [] as string[],
-    ratings: [],
+    categories: [],
     location: lat && lng ? { latitude: parseFloat(lat), longitude: parseFloat(lng) } : {},
     owner: {
       id: user?.id || "",
@@ -47,6 +62,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<null | { success: boolean; product?: any; error?: string }>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [showValidationError, setShowValidationError] = useState(false);
 
   // Debounced save to localStorage
   const debouncedSave = useRef(
@@ -92,10 +108,10 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
 
   // Handlers
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setForm(f => ({
       ...f,
-      [name]: type === "number" ? Number(value) : value,
+      [name]: value, // Always store as string
     }));
   };
 
@@ -135,7 +151,6 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
       price: "",
       stock: "",
       categories: [],
-      ratings: [],
       location: lat && lng ? { latitude: parseFloat(lat), longitude: parseFloat(lng) } : {},
       owner: {
         id: user?.id || "",
@@ -145,22 +160,26 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     localStorage.removeItem(DRAFT_KEY);
   };
 
+  const toBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSignedIn) {
       setSubmitResult({ success: false, error: "Please log in to post a product." });
       return;
     }
+    if (!validateForm(form)) {
+      setShowValidationError(true);
+      return;
+    }
     setSubmitting(true);
     setSubmitResult(null);
-
-    const toBase64 = (file: File) =>
-      new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-      });
 
     let imageBase64 = null;
     if (form.image instanceof File) {
@@ -176,6 +195,8 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
 
     const data = {
       ...form,
+      price: Number(form.price),
+      stock: Number(form.stock),
       image: imageBase64,
       images: imagesBase64,
     };
@@ -194,7 +215,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
       localStorage.removeItem(DRAFT_KEY);
       handleNewProduct();
     } else {
-      setSubmitResult({ success: false, error: "Failed to submit product." });
+      setSubmitResult({ success: false, error: "Failed! product Data Should be < 1MB" });
     }
   };
 
@@ -271,6 +292,46 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     }
   };
 
+  // Debounce search input for smoother filtering
+  const [searchTerm, setSearchTerm] = useState("");
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleCategorySearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      setCategorySearch(value);
+    }, 120); // 120ms debounce
+    setSearchTerm(value);
+  };
+
+  // Memoize filtered categories for performance
+  const filteredCategories = useMemo(
+    () =>
+      allCategories.filter(
+        cat =>
+          cat.title.toLowerCase().includes(categorySearch.toLowerCase()) &&
+          !form.categories.includes(cat._id)
+      ),
+    [allCategories, categorySearch, form.categories]
+  );
+
+  function validateForm(form: ProductFormState) {
+    if (
+      form.name.trim() === "" ||
+      form.slug.trim() === "" ||
+      !form.image ||
+      form.description.trim() === "" ||
+      form.price === "" ||
+      form.stock === "" ||
+      form.categories.length === 0 ||
+      !form.owner.id ||
+      !form.owner.email
+    ) {
+      return false;
+    }
+    return true;
+  }
 
   return (
     <form
@@ -351,7 +412,6 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
               <input
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleImageChange}
                 className="hidden"
               />
@@ -479,11 +539,11 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
                 value={genPrompt}
                 onChange={e => setGenPrompt(e.target.value)}
                 placeholder="Describe your product or speak..."
-                className="flex-1 border rounded px-3 py-2 bg-gray-50"
+                className="flex-1 border text-sm sm:text-base rounded px-3 py-2 bg-gray-50"
               />
               <button
                 type="button"
-                className="px-3 py-2 rounded bg-zinc-800 text-white text-xs hover:bg-zinc-900 flex items-center justify-center"
+                className="absolute right-20 px-1 py-1 sm:px-3 sm:py-2 rounded bg-zinc-800 text-white text-xs hover:bg-zinc-900 flex items-center justify-center"
                 onClick={async () => {
                   if (!genPrompt.trim()) return;
                   const desc = await fetchAIDescription(genPrompt);
@@ -509,7 +569,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
                     />
                   </svg>
                 ) : (
-                  <FaArrowUp size={12} className="text-base" />
+                  <FaArrowUp size={15} className="text-base" />
                 )}
               </button>
               <button
@@ -616,7 +676,12 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
               <span
                 key={cat._id}
                 className="flex items-center bg-zinc-800 text-white px-2 py-1 rounded-md text-xs cursor-pointer"
-                onClick={() => handleCategoryChange(cat._id)}
+                onClick={() => {
+                  handleCategoryChange(cat._id);
+                  setCategorySearch("");
+                  setSearchTerm("");
+                  setDropdownOpen(false);
+                }}
                 title="Remove"
               >
                 {cat.title}
@@ -630,56 +695,47 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           <input
             type="text"
             placeholder="Search category..."
-            value={categorySearch}
+            value={searchTerm}
             onFocus={() => setDropdownOpen(true)}
-            onChange={e => setCategorySearch(e.target.value)}
+            onBlur={() => setTimeout(() => setDropdownOpen(false), 150)}
+            onChange={e => {
+              handleCategorySearch(e);
+              setDropdownOpen(true);
+            }}
             onKeyDown={e => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                // Only select if there is a match in the dropdown
-                const filtered = allCategories.filter(
-                  cat =>
-                    cat.title.toLowerCase().includes(categorySearch.toLowerCase()) &&
-                    !form.categories.includes(cat._id)
-                );
-                if (filtered.length > 0) {
-                  handleCategoryChange(filtered[0]._id);
+                if (filteredCategories.length > 0) {
+                  handleCategoryChange(filteredCategories[0]._id);
                   setCategorySearch("");
+                  setSearchTerm("");
                   setDropdownOpen(false);
                 }
               }
             }}
             className="w-full border rounded px-3 py-2 bg-gray-50"
+            autoComplete="off"
           />
           {dropdownOpen && (
             <div
               className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-40 overflow-y-auto"
-              onMouseLeave={() => setDropdownOpen(false)}
             >
-              {allCategories
-                .filter(
-                  cat =>
-                    cat.title.toLowerCase().includes(categorySearch.toLowerCase()) &&
-                    !form.categories.includes(cat._id)
-                )
-                .map(cat => (
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map(cat => (
                   <div
                     key={cat._id}
                     className="px-3 py-2 hover:bg-zinc-100 cursor-pointer"
-                    onClick={() => {
+                    onMouseDown={() => {
                       handleCategoryChange(cat._id);
                       setCategorySearch("");
+                      setSearchTerm("");
                       setDropdownOpen(false);
                     }}
                   >
                     {cat.title}
                   </div>
-                ))}
-              {allCategories.filter(
-                cat =>
-                  cat.title.toLowerCase().includes(categorySearch.toLowerCase()) &&
-                  !form.categories.includes(cat._id)
-              ).length === 0 && (
+                ))
+              ) : (
                 <div className="px-3 py-2 text-zinc-400">No categories found</div>
               )}
             </div>
@@ -781,6 +837,21 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           </button>
         </>
       )}
+    </div>
+  </div>
+)}
+
+{showValidationError && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+    <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center max-w-md">
+      <h3 className="text-lg font-bold mb-2 text-red-700">Complete the Details</h3>
+      <div className="mb-2 text-zinc-600">Please fill all required fields before posting your product.</div>
+      <button
+        className="mt-4 px-4 py-2 rounded bg-zinc-800 text-white hover:bg-zinc-900"
+        onClick={() => setShowValidationError(false)}
+      >
+        OK
+      </button>
     </div>
   </div>
 )}
