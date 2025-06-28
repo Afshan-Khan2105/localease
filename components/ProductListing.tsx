@@ -800,10 +800,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
       {submitting && (
   <div className="fixed -top-4 inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
     <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
-      <svg className="animate-spin h-8 w-8 text-zinc-900 mb-4" viewBox="0 0 24 24">
-        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-        <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-      </svg>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 m-2"></div>
       <span className="text-zinc-800 font-semibold">Posting your product...</span>
     </div>
   </div>

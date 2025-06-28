@@ -14,7 +14,7 @@ export async function getMyOrders(userId: string) {
           _id,
           name,
           image { asset->{url} },
-          price
+          price,
         },
         quantity
       },
@@ -23,13 +23,13 @@ export async function getMyOrders(userId: string) {
       orderDate
     }
   `);
-
   try {
+
     const orders = await sanityFetch({
       query: MY_ORDER_QUERY,
       params: { userId },
     });
-    return orders || [];
+    return orders|| [];
   } catch (error) {
     console.log("Error fetching orders: ", error);
     throw new Error("Error fetching orders");

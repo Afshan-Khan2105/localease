@@ -317,7 +317,7 @@ const [gpsActive, setGpsActive] = useState(false);
 
         {/* Order Requests */}
         <Link
-          href="/orders?tab=requests"
+          href="/orderReq"
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
           {/* Inbox icon */}

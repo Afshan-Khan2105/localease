@@ -54,13 +54,10 @@ export default function ProductInventory() {
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <h1 className="sm:text-2xl text-lg font-bold mb-8 text-center text-zinc-800">Your Listed Products</h1>
       {loading ? (
-        <div className="flex justify-center items-center h-40">
-          <svg className="animate-spin h-8 w-8 text-zinc-800" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
+        <div className="flex justify-center flex-col gap-2 items-center max-h-screen min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
           <span className="ml-3 text-zinc-800">Loading...</span>
-        </div>
+         </div>
       ) : products.length === 0 ? (
         <div className="text-center text-zinc-500 mt-12">No products found for this owner.</div>
       ) : (

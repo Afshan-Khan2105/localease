@@ -74,6 +74,7 @@ export const orderType = defineType({
                             title: "Quantity Purchased",
                             type: "number",
                         }),
+                        
                     ],
                     preview: {
                         select: {
@@ -84,10 +85,10 @@ export const orderType = defineType({
                             Currency: "product.currency",
                         },
                         prepare(select) {
-                               return {
-                                 title: `${select.title} x ${select.quantity}`,
-                                 subtitle: `${select.price * select.quantity}`,
-                                 media: select.image,
+                            return {
+                                title: `${select.title} x ${select.quantity}`,
+                                subtitle: `₹${select.price * select.quantity}`,
+                                media: select.image,
                             }
                         }
                     },

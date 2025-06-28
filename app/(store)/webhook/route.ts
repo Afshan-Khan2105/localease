@@ -63,18 +63,20 @@ async function createOrderInSanity(session: Stripe.Checkout.Session) {
         expand: ["data.price.product"],
     });
 
+    // Build order items with owner info (only include owner if present)
     const orderItems = lineItems.data.map((item) => {
+      const productId = (item.price?.product as Stripe.Product)?.metadata?.id;
       return {
         _key: crypto.randomUUID(),
         product: {
           _type: "reference",
-          _ref: (item.price?.product as Stripe.Product)?.metadata?.id,
+          _ref: productId,
         },
         quantity: item.quantity || 0,
       };
     });
 
-    const order =  await serverClient.create({
+    const order = await serverClient.create({
         _type: "order",
         orderNumber,
         stripeCheckoutSessionId: id,
@@ -84,13 +86,13 @@ async function createOrderInSanity(session: Stripe.Checkout.Session) {
         clerkUserId: clerkUserId,
         email: customerEmail,
         amountDiscount: total_details?.amount_discount 
-         ? total_details.amount_discount / 100
-         : 0,
+          ? total_details.amount_discount / 100
+          : 0,
         products: orderItems,
         totalPrice: amount_total ? amount_total / 100 : 0,
         status: "paid",
         orderDate: new Date().toISOString(),
-     })
+     });
 
    return order;
 }

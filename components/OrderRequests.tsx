@@ -1,0 +1,192 @@
+import React, { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
+
+type Product = {
+  product: {
+    name: string;
+    price: number;
+    image?: { asset?: { url: string } };
+  };
+  quantity: number;
+  owner: { id: string; email: string };
+};
+
+type Order = {
+  _id: string;
+  orderNumber: string;
+  customerName: string;
+  email: string;
+  products: Product[];
+  amountDiscount?: number;
+  totalPrice: number;
+  orderDate: string;
+  status: string;
+};
+
+function formatCurrency(amount: number) {
+  return "₹" + amount.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+}
+
+function OrderCard({
+  orderNumber,
+  customerName,
+  email,
+  products,
+  amountDiscount,
+  totalPrice,
+  orderDate,
+  status,
+}: Order) {
+  return (
+    <div className="bg-white rounded-lg shadow p-4 border">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 sm:text-sm text-xs">
+        <div>
+          <span className="font-semibold text-zinc-700">Order #</span>
+          <span className="ml-1 animate-pulse duration-800 text-orange-400">{orderNumber}</span>
+        </div>
+        <div className="text-sm text-zinc-500">
+          {new Date(orderDate).toLocaleString()}
+        </div>
+      </div>
+      <div className="mb-2 sm:text-sm text-xs">
+        <span className="font-semibold">Customer:</span>{" "}
+        <span className="text-zinc-800">{customerName}</span> (
+        <span className="text-zinc-800">{email}</span>)
+      </div>
+      <div className="mb-2">
+        <span className="font-semibold">Products:</span>
+        <div className="flex flex-wrap gap-4 mt-2">
+          {products.map((p, idx) => (
+            <div className="flex items-center justify-between w-full" key={idx}>
+            <div
+              className="flex items-center shadow-sm gap-2 bg-white rounded p-2 border"
+            >
+              {p.product?.image?.asset?.url && (
+                <Image
+                  src={p.product.image.asset.url}
+                  alt={p.product.name}
+                  width={60}
+                  height={60}
+                  className="rounded w-8 h-8 object-cover"
+                />
+              )}
+              <div>
+                <div className="font-medium text-sm mb-1">{p.product.name}</div>
+                <div className="text-xs text-zinc-700">
+                  Qty: {p.quantity} &nbsp;|&nbsp; Price:{" "}
+                  {formatCurrency(p.product.price)}
+                </div>
+              </div>
+            </div>
+            <div className="inline text-xs text-zinc-500">
+              <button className="text-xs bg-zinc-800 hover:bg-zinc-900 text-white px-2 py-1 rounded">Remove</button>
+            </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-4 mt-2">
+        {amountDiscount ? (
+          <div className="bg-green-50 px-3 py-1 rounded text-green-600 text-sm">
+            Discount: {formatCurrency(amountDiscount)}
+          </div>
+        ) : null}
+        <div className="bg-blue-50 px-3 py-1 rounded text-blue-600 text-sm">
+          Total: {formatCurrency(totalPrice)}
+        </div>
+
+        <div>
+          <span className="text-sm sm:font-semibold">Status:</span>
+          <span
+            className={`ml-1 px-2 py-1 rounded text-xs ${
+              status === "paid"
+                ? "bg-green-100 text-green-700"
+                : status === "Pending"
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {status}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function OrderRequests() {
+  const { user, isSignedIn } = useUser();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    const fetchOrders = async () => {
+      setLoading(true);
+      console.log("Fetching orders for user:", user.id, user.primaryEmailAddress?.emailAddress);
+      const res = await fetch(
+        `/api/owner-orders?ownerId=${encodeURIComponent(user.id)}&ownerEmail=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || "")}`
+      );
+      const data = await res.json();
+      console.log("Fetched orders:", data);
+      setOrders(data.orders || []);
+      setLoading(false);
+    };
+    fetchOrders();
+  }, [isSignedIn, user]);
+
+  if (!isSignedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center sm:h-[80vh] h-[72vh]">
+        <p className="sm:text-lg text-base font-semibold mb-2">Please log in to view your order requests.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className=" flex justify-center items-center sm:h-[80vh] h-[72vh] flex-col space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <span className="text-zinc-700 font-semibold">Loading orders...</span>
+    </div>
+     
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center sm:h-[80vh] h-[72vh]">
+        <span className="text-zinc-500">No Orders Received!</span>
+      </div>
+    );
+  }
+  if (orders.length > 0 && !Array.isArray(orders)) {
+    return (
+      <div className="flex flex-col items-center justify-center sm:h-[80vh] h-[72vh]">
+        <span className="text-red-500">Error: Orders data is not in expected format.</span>
+      </div>
+    );
+  } 
+  return (
+    <div className=" max-w-4xl mx-auto px-2 py-4">
+      <h2 className="sm:text-2xl text-lg font-bold mb-6 text-center">Orders Received</h2>
+      <div className="space-y-6">
+        {orders.map(order => (
+          <OrderCard
+            key={order._id}
+            _id={order._id}
+            orderNumber={order.orderNumber}
+            customerName={order.customerName}
+            email={order.email}
+            products={order.products}
+            amountDiscount={order.amountDiscount}
+            totalPrice={order.totalPrice}
+            orderDate={order.orderDate}
+            status={order.status}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

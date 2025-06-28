@@ -1,3 +1,4 @@
+
 import ProductsView from "@/components/ProductsView";
 import { getAllCategories } from "@/sanity/lib/products/getAllCategories";
 import { getProductsByCategory } from "@/sanity/lib/products/getProductsByCategory";
@@ -41,14 +42,14 @@ async function CategoryPage(
     }));
 
   return (
-    <div className="flex flex-col items-center justify-top min-h-screen bg-zinc-100 p-4">
-      <div className=" bg-white p-8 rounded-lg shadow-md w-full max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6 text-center">
+    <div className="flex flex-col items-center justify-top min-h-screen bg-zinc-100 py-4 px-2">
+      <div className=" bg-white p-4 rounded-lg shadow-md w-full max-w-6xl">
+        <h1 className="sm:text-3xl text-xl font-bold mb-6 text-center">
             {slug
             .split("-")
             .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(" ")}{" "}
-            Collection
+            Collections
         </h1>
         <ProductsView products={products} categories={categories}/>
         </div>
