@@ -122,10 +122,14 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
   };
 
   const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setForm(f => ({ ...f, images: Array.from(e.target.files!) }));
-    }
+    if (!e.target.files) return;
+    const newFiles = Array.from(e.target.files);
+    setForm(f => ({
+      ...f,
+      images: [...f.images, ...newFiles],
+    }));
   };
+
 
   const handleCategoryChange = (catId: string) => {
     setForm(f => ({
@@ -205,6 +209,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+
     });
 
     setSubmitting(false);
@@ -339,7 +344,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
       onSubmit={handleSubmit}
     >
       <h2 className="sm:text-2xl text-lg font-bold text-center mb-2">A New Product</h2>
-      <div className="flex flex-col sm:flex-row gap-4 w-full">
+      <div className="flex flex-col sm:flex-row gap-4 w-full sm:text-sm text-xs">
             <div className="flex-1">
             <label className="block text-gray-700 mb-1">Product Name</label>
             <input
@@ -373,7 +378,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-8">
+      <div className="flex flex-col sm:flex-row gap-8 sm:text-sm text-xs">
         {/* Single Product Image */}
         <div className="flex flex-col items-center">
           <label className="block text-gray-700 mb-2">Product Image</label>
@@ -441,10 +446,10 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
         </div>
 
         {/* Multiple Product Images */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center sm:text-sm text-xs">
           <label className="block text-gray-700 mb-2">Product Images (Multiple)</label>
 
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2 ">
             <div className="flex gap-2 flex-wrap items-center">
               {/* Blank image button for multiple */}
               <label className="flex flex-col items-center justify-center w-16 sm:w-32 h-16 sm:h-32 border-2 border-dashed border-zinc-600 rounded cursor-pointer hover:border-zinc-800 transition">
@@ -513,7 +518,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           </div>
         </div>
       </div>
-      <div className="mb-4">
+      <div className="mb-4 sm:text-sm text-xs">
         <div className="flex items-center justify-between gap-2">
           <label className="block text-gray-700 mb-1">Description</label>
           <button
@@ -532,14 +537,14 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           className="w-full border rounded px-3 py-2 bg-gray-50"
         />
         {showGen && (
-          <div className="mt-2 flex flex-col gap-2">
+          <div className="mt-2 flex flex-col gap-2 sm:text-sm text-xs">
             <div className="flex gap-2 items-center">
               <input
                 type="text"
                 value={genPrompt}
                 onChange={e => setGenPrompt(e.target.value)}
                 placeholder="Describe your product or speak..."
-                className="flex-1 border text-sm sm:text-base rounded px-3 py-2 bg-gray-50"
+                className="flex-1 border text-xs sm:text-sm rounded px-3 py-2 bg-gray-50"
               />
               <button
                 type="button"
@@ -590,7 +595,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           </div>
         )}
         {micActive && (
-          <div className="w-full flex items-center justify-center mt-2">
+          <div className="w-full flex items-center justify-center mt-2 ">
             <div className="flex  jus items-center gap-1 h-6">
               {[...Array(8)].map((_, i) => (
                 <div
@@ -613,7 +618,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           </div>
         )}
         {recordedVoice && (
-          <div className="flex items-center gap-2 mt-2 bg-zinc-100 rounded px-3 py-2">
+          <div className="flex items-center gap-2 mt-2 bg-zinc-100 rounded px-3 py-2 ">
             <FaMicrophone className="text-zinc-800" />
             <span className="text-sm text-zinc-800">{recordedVoice.text}</span>
             <span className="text-xs text-zinc-500 ml-2">{recordedVoice.duration}s</span>
@@ -639,7 +644,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           </div>
         )}
       </div>
-      <div className="flex gap-4">
+      <div className="flex gap-4 sm:text-sm text-xs">
         <div className="flex-1">
           <label className="block text-gray-700 mb-1">Price (₹)</label>
           <input
@@ -652,7 +657,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
             className="w-full border rounded px-3 py-2 bg-gray-50"
           />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 sm:text-sm text-xs">
           <label className="block text-gray-700 mb-1">Stock</label>
           <input
             name="stock"
@@ -666,7 +671,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
         </div>
       </div>
       <div>
-        <label className="block text-gray-700 mb-1">Categories</label>
+        <label className="block text-gray-700 mb-1 sm:text-sm text-xs">Categories</label>
         {/* Selected categories as chips */}
         <div className="flex flex-wrap gap-2 mb-2">
           {form.categories.map(catId => {
@@ -691,7 +696,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           })}
         </div>
         {/* Dropdown search */}
-        <div className="relative">
+        <div className="relative sm:text-sm text-xs">
           <input
             type="text"
             placeholder="Search category..."
@@ -713,12 +718,15 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
                 }
               }
             }}
-            className="w-full border rounded px-3 py-2 bg-gray-50"
+            className="w-full border rounded sm:text-sm text-xs px-3 py-2 bg-gray-50"
             autoComplete="off"
           />
           {dropdownOpen && (
-            <div
-              className="absolute z-50 mt-1 w-full bg-white border rounded shadow max-h-40 overflow-y-auto"
+            <div className="
+                absolute z-50 mt-1 w-full bg-white border rounded shadow
+                max-h-40 overflow-y-auto sm:text-sm text-xs
+                [–webkit-overflow-scrolling:touch]
+              "
             >
               {filteredCategories.length > 0 ? (
                 filteredCategories.map(cat => (
@@ -743,14 +751,14 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
         </div>
       </div>
       {/* Location display (readonly) */}
-      <div>
+      <div className="sm:text-sm text-xs">
         <label className="block text-gray-700 mb-1">Location (from map)</label>
         <div className="bg-gray-100 rounded px-3 py-2 text-sm">
           Lat: {lat}, Lng: {lng}
         </div>
       </div>
       {/* Owner info (readonly) */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 sm:text-sm text-xs">
         <div className="flex-1">
           <label className="block text-gray-700 mb-1">Owner ID</label>
           <input
@@ -768,13 +776,13 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           />
         </div>
       </div>
-      <div className="flex gap-2 sm:justify-normal justify-center mt-4">
+      <div className="flex gap-2 sm:text-sm text-xs sm:justify-normal justify-center mt-4">
         <button
           type="button"
           onClick={handleNewProduct}
           className="px-4 py-2 rounded-md bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
-         Clear Details
+         Clear
         </button>
         <button
           type="button"
@@ -792,7 +800,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
               : "bg-gray-300 text-gray-500 cursor-not-allowed"
           } transition`}
         >
-          {isSignedIn ? "Post Product" : "Login to Post"}
+          {isSignedIn ? "Post Produt" : "Login to Post"}
         </button>
       </div>
 

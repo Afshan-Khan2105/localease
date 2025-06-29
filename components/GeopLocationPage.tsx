@@ -138,15 +138,15 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
     : categories.slice(0, 15);
 
   return (
-    <div className="bg-gray-100 min-h-screen overflow-x-hidden">
-      <h4 className="text-center text-xl font-semibold ">
+    <div className="bg-gray-50 min-h-screen overflow-x-hidden">
+      <h4 className="text-center p-1 sm:text-xl text-md font-semibold ">
         Find Products Near You
       </h4>
       <div className="grid grid-cols-2 md:grid-cols-4 h-screen ">
         <aside className="bg-white p-4 md:border-r-2 shadow-md w-[100vw] md:w-auto">
-          <h2 className="text-xl font-semibold mb-4">Filters</h2>
+          <h2 className="sm:text-xl text-md font-semibold mb-4">Use Filters</h2>
           <label className="block text-sm font-medium mb-2">Categories</label>
-          <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+          <div className={`flex flex-wrap gap-2  ${showAllCategories? "max-h-full" : "sm:max-h-40 max-h-28"} overflow-y-auto`}>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {visibleCategories.map((cat: any) => {
               const title = cat.title || "Unknown";
@@ -154,10 +154,10 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
               return (
                 <button
                   key={cat._id}
-                  className={`px-3 py-1 text-sm font-medium border rounded-md ${
+                  className={`sm:px-3 py-1 sm:text-sm text-xs px-2 font-medium border shadow-md rounded-md ${
                     isSelected
                       ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-800"
+                      : "bg-gray-50 text-gray-800"
                   }`}
                   onClick={() => handleCategoryClick(cat)}
                 >
@@ -169,21 +169,21 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
           {categories.length > 15 && (
             <button
               onClick={() => setShowAllCategories((p) => !p)}
-              className="mt-2 text-sm text-blue-500 hover:underline"
+              className="mt-2 sm:text-sm text-xs text-blue-500 hover:underline"
             >
               {showAllCategories ? "Show Less" : "Show All Categories"}
             </button>
           )}
           {filters.categories.length > 0 && (
             <button
-              className="mt-2 mb-2 px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+              className="ml-4 mt-2 mb-2 px-3 py-1 text-xs bg-red-100 text-red-500 rounded hover:bg-red-200"
               onClick={() => setFilters((prev: typeof filters) => ({ ...prev, categories: [] }))}
             >
               Remove All Category Filters
             </button>
           )}
-          <div className="mt-4">
-            <label className="block text-sm font-medium">
+          <div className="sm:mt-4 mt-2">
+            <label className="block sm:text-sm text-xs font-medium">
               Price: ₹{filters.minPrice} - ₹{filters.maxPrice}
             </label>
             <Range
@@ -246,7 +246,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
             />
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium">
+            <label className="block sm:text-sm text-xs font-medium">
               Search Radius: {filters.radius} km
             </label>
             <input
@@ -260,7 +260,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
             />
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium mb-2">
+            <label className="block sm:text-sm text-xs font-medium mb-2">
               Minimum Rating
             </label>
             <div className="flex space-x-1">
@@ -268,7 +268,7 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
                 <button
                   key={star}
                   onClick={() => handleRatingClick(star)}
-                  className={`flex items-center justify-center w-6 h-6 ${
+                  className={`flex items-center justify-center sm:w-6 sm:h-6 w-5 h-5 ${
                     star <= filters.minRating
                       ? "bg-yellow-400 text-white"
                       : "bg-gray-200 text-gray-800 hover:bg-gray-300"
@@ -282,19 +282,19 @@ export default function GeopLocationPage({ products, categories }: ProductsViewP
             </div>
             {filters.minRating > 0 && (
               <button
-                className="mt-2 px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200"
+                className="mt-2 px-3 py-1 text-xs bg-red-100 text-red-500 rounded hover:bg-red-200"
                 onClick={() => setFilters((prev: typeof filters) => ({ ...prev, minRating: 0 }))}
               >
                 Remove Rating Filter
               </button>
             )}
           </div>
-          <p className="mt-4 text-sm text-gray-600">
+          <p className="mt-4 sm:text-sm text-xs text-gray-600">
             Showing {displayedProductCount} products
           </p>
         </aside>
 
-        <main className="bg-gray-50 col-span-2 md:col-span-3 flex flex-col">
+        <main className="col-span-2 md:col-span-3 flex flex-col">
           <MapsProduct
             filters={filters}
             products={filteredProducts}

@@ -4,11 +4,10 @@ import { GoogleMap, Marker, Circle, OverlayView, useLoadScript, DirectionsRender
 import { imageUrl } from "@/lib/imageUrl";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { TbGpsFilled } from "react-icons/tb";
-import { IoIosList } from "react-icons/io";
-import { MdInventory } from "react-icons/md";
 import { PiShoppingBagOpenFill } from "react-icons/pi";
 import Link from "next/link";
+import { RiFunctionAddFill, RiUserLocationLine } from "react-icons/ri";
+import { FaList } from "react-icons/fa";
 
 const libraries: ("places")[] = ["places"];
 
@@ -72,7 +71,7 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
   });
 
   const [pointerLocation, setPointerLocation] = useState({ lat: 28.6139, lng: 77.209 });
-const [gpsActive, setGpsActive] = useState(false);
+  const [gpsActive, setGpsActive] = useState(false);
   const [gpsLocation, setGpsLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
@@ -278,7 +277,7 @@ const [gpsActive, setGpsActive] = useState(false);
 
   return (
     <div className="p-4">
-      <div className="flex  gap-2 mt-2 mb-2">
+      <div className="flex gap-2 mt-2 mb-2">
           {/* GPS Button */}
         <button
           onClick={handleCurrentLocationClick}
@@ -286,8 +285,8 @@ const [gpsActive, setGpsActive] = useState(false);
             gpsActive ? "bg-zinc-800" : "bg-zinc-800"
           } text-white hover:bg-zinc-900 transition`}
         >
-          <TbGpsFilled size={20} />
-          <span className="sm:block hidden">{gpsActive ? "Turn Off Navigation" : "Navigate your Location"}</span>
+          <RiUserLocationLine size={15} />
+          <span className="sm:block hidden">{gpsActive ? "Off Navigation" : "On Navigation"}</span>
         </button>
 
         {/* List Your Product */}
@@ -302,7 +301,7 @@ const [gpsActive, setGpsActive] = useState(false);
           }}
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
-          <IoIosList size={15}/>
+          <RiFunctionAddFill size={15}/>
           <span className="sm:block hidden">List Products</span>
           
           <span className="sm:hidden block text-xs">List</span>
@@ -313,7 +312,7 @@ const [gpsActive, setGpsActive] = useState(false);
           href="/Inventory"
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
-          <MdInventory size={15} />
+          <FaList size={15} />
           <span className="sm:block hidden">Inventory</span>
           
           <span className="sm:hidden block text-xs">Inventory</span>
@@ -455,35 +454,37 @@ const [gpsActive, setGpsActive] = useState(false);
             mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
           >
             <div
-              className="bg-white rounded-xl shadow-lg p-4 border border-blue-200 z-50 w-[60vw] max-w-72"
+              className="bg-white rounded-xl shadow-lg sm:p-4 p-2 border border-blue-200 z-50 w-[60vw] max-w-72"
               style={{
                 transform: "translate(-10px, -120%)",
                 minWidth: 200,
               }}
             >
-              <div className="flex items-center gap-6">
+              <div className="flex items-center sm:gap-6 gap-4 ">
                 <Image
                   src={imageUrl(selectedProduct.image).url() || selectedProduct.image}
                   alt={selectedProduct.name}
                   width={84}
                   height={84}
-                  className="rounded-lg object-cover shadow-md"
+                  className="rounded-lg object-cover sm:w-16 sm:h-16 w-12 h-12 shadow-md"
                 />
                 <div>
-                  <h4 className="text-lg font-bold">{selectedProduct.name}</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="sm:text-lg text-sm font-bold">{selectedProduct.name}</h4>
+                  <p className="sm:text-sm text-xs text-gray-600">
                     {selectedProduct.location.address || "No address available"}
                   </p>
-                  <span className="text-gray-600 font-semibold">₹{selectedProduct.price}  |  </span>
+                  <span className="text-gray-700  font-semibold">₹{selectedProduct.price}  |  </span>
                   <span className="text-gray-600">⭐ {selectedProduct.avgRating.toFixed(1)}</span>
                 </div>
               </div>
-              <div className="flex gap-2 mt-4 ml-4">
+              <div className="flex gap-2 sm:mt-4  justify-center items-center mt-2">
                 <button
-                  className="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow-md hover:bg-blue-200"
+                  className="bg-blue-100 text-blue-700 px-3 py-1  rounded shadow-md hover:bg-blue-200"
                   onClick={() => router.push(`/product/${selectedProduct.slug}`)}
                 >
-                 View Product
+                  <span className="sm:block hidden">View Product</span>
+                  <span className="sm:hidden block">View</span>
+                 
                 </button>
                 <button
                   className="bg-blue-100 text-blue-700 px-3 py-1 rounded shadow-md hover:bg-blue-200"
@@ -507,8 +508,8 @@ const [gpsActive, setGpsActive] = useState(false);
       </GoogleMap>
 
       <div className="mt-4">
-        <h3 className="text-lg font-bold">Products Nearby</h3>
-        <div className="overflow-x-auto flex gap-4 p-2 bg-white shadow-md">
+        <h3 className="text-lg font-bold">Nearby Products</h3>
+        <div className="overflow-x-auto flex gap-4 p-2 bg-white shadow-lg">
           {filteredProducts.length ? (
             filteredProducts.map((product) => (
               <div

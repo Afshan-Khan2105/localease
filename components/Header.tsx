@@ -74,7 +74,7 @@ function Header() {
 
         <div className="flex w-auto md:w-full flex-wrap justify-between  sm:gap-2 items-center " >
 
-          <div className="md:flex-none justify-between items-center gap-2 flex flex-row w-full lg:w-auto ">
+          <div className="md:flex-none justify-between items-center gap-2 flex flex-row w-full lg:w-auto">
            <Link
             href="/"
             className="text-xl text-black font-bold hover:opacity-80 cursor-pointer mx-auto sm:mx-0 sm:text-2xl hover:scale-105 transition-all duration-150"
@@ -93,7 +93,7 @@ function Header() {
                   onChange={(e) => setInputValue(e.target.value)}
                   className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-lg focus:ring-1 focus:outline-none focus:ring-blue-300 focus:ring-opacity-80 border w-full"
                 />
-                <button className="absolute right-2 top-2 text-xl opacity-60"><FiSearch/></button>
+                <button className="absolute right-2 top-3 text-xl opacity-80 hover:opacity-100 hover:scale-105"><FiSearch/></button>
                
 
                 {/* Animated Placeholder */}
@@ -120,17 +120,18 @@ function Header() {
 
             <Link
               href="/nearBy"
-              className=" relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 
-                        bg-zinc-800 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300"
+              className=" relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 sm:text-sm text-xs
+                        bg-zinc-800 hover:bg-zinc-900 text-white font-bold  sm:py-2 sm:px-4 p-2  rounded-lg transition-all duration-300"
             >
               
-              <MdLocationOn className="w-6 h-6" />
+              <MdLocationOn className="w-5 h-5" />
+              <span>Nearby</span> 
 
             </Link>
               
                 <Link href="/basket" 
-                className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 bg-zinc-800 hover:bg-zinc-900
-                 text-white font-bold py-2 px-4 rounded-lg">
+                className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 sm:text-sm text-xs bg-zinc-800 hover:bg-zinc-900
+                 text-white font-bold sm:py-2 sm:px-4 p-2  rounded-lg">
                   
                 <CgShoppingBag className="w-5 h-5" />
 
@@ -140,17 +141,18 @@ function Header() {
                     {itemCount}
                   </span>
                 )}
+                {width < 580 ? <span>Cart</span> : <span>My Cart</span>} 
                 
-                <span className={` ${width < 580 ? "hidden md:block" : ""} `}>My Cart</span>
                 </Link>
 
                 {/* User */}
                 <ClerkLoaded>
                     <SignedIn>
-                      <Link href="/orders" className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2
-                                                      bg-zinc-800 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg">
+                      <Link href="/orders" className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 sm:text-sm text-xs
+                                                      bg-zinc-800 hover:bg-zinc-900 text-white font-bold sm:py-2 sm:px-4 p-2 rounded-lg">
                         <BiPackage className=" w-5 h-5"/>
-                        <span className={` ${ width < 580 ? "hidden md:block" : ""} `} >My Orders</span>
+
+                          {width < 580 ? <span>Orders</span> : <span>My Orders</span>} 
 
                       </Link>
                    </SignedIn>

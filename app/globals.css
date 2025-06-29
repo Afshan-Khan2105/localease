@@ -70,3 +70,7 @@ body {
     @apply bg-background text-foreground;
   }
 }
+/* globals.css */
+[–webkit-overflow-scrolling\:touch] {
+  -webkit-overflow-scrolling: touch;
+}

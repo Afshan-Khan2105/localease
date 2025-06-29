@@ -5,7 +5,7 @@ import { serverClient } from "@/sanity/lib/serverClient";
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '50mb',
+      sizeLimit: '100mb',
     },
   },
 };
@@ -129,4 +129,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: "Failed to add product" });
   }
 }
-
