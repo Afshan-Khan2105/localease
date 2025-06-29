@@ -36,7 +36,7 @@ export default function ProductInventory() {
       setProducts((prev) => prev.filter((p) => p._id !== productId));
       setConfirmId(null);
     } catch {
-      setError("Failed to delete product.");
+      setError("Failed to delete product. It may be exist in orders.");
     } finally {
       setRemoving(null);
     }
@@ -114,10 +114,10 @@ export default function ProductInventory() {
               {confirmId === product._id && (
                 <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
                   <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center max-w-md">
-                    <h3 className="text-lg font-bold mb-2 text-red-700">Remove Product?</h3>
+                    <h3 className="text-lg  mb-2 text-red-600">Remove Product?</h3>
                     <div className="mb-2 font-semibold">{product.name}</div>
                     <div className="mb-2 text-xs text-zinc-600">Are you sure you want to delete this product?</div>
-                    {error && <div className="text-red-600 mb-2">{error}</div>}
+                    {error && <div className="text-red-500  text-center mb-2">{error}</div>}
                     <div className="flex gap-4 mt-4">
                       <button
                         className="px-4 py-2 rounded bg-zinc-800 text-white hover:bg-zinc-900"

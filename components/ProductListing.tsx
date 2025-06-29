@@ -718,7 +718,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           />
           {dropdownOpen && (
             <div
-              className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-40 overflow-y-auto"
+              className="absolute z-50 mt-1 w-full bg-white border rounded shadow max-h-40 overflow-y-auto"
             >
               {filteredCategories.length > 0 ? (
                 filteredCategories.map(cat => (

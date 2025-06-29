@@ -56,7 +56,7 @@ export default function AddToCartSection({ product, isOutOfStock }: Props) {
         <label className="text-sm font-medium mb-1 sm:mb-0 mr-2">Quantity:</label>
           <button
             onClick={handleDec}
-            className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-900 text-white text-lg font-bold disabled:opacity-80 disabled:cursor-not-allowed"
+            className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-900 text-white text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isOutOfStock || quantity <= 1}
             type="button"
             aria-label="Decrease quantity"
@@ -77,7 +77,7 @@ export default function AddToCartSection({ product, isOutOfStock }: Props) {
           </select>
           <button
             onClick={handleInc}
-            className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-900 text-white text-lg font-bold disabled:opacity-80 disabled:cursor-not-allowed"
+            className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-zinc-800 hover:bg-zinc-900 text-white text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isOutOfStock || quantity >= maxQty}
             type="button"
             aria-label="Increase quantity"

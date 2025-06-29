@@ -35,8 +35,8 @@ export default function ImageSlider({ images, alt, isOutOfStock }: ImageSliderPr
             />
             
             {isOutOfStock && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                <span className="text-white font-bold text-lg">Out of Stock</span>
+              <div className="absolute inset-0 flex items-center justify-center rounded bg-black bg-opacity-50">
+                <span className="text-white text-lg">Out of Stock</span>
               </div>
             )}
           </div>

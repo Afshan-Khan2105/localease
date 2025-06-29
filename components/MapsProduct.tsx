@@ -302,8 +302,10 @@ const [gpsActive, setGpsActive] = useState(false);
           }}
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
-          <IoIosList size={20}/>
-          <span className="sm:block hidden">List Your Product</span>
+          <IoIosList size={15}/>
+          <span className="sm:block hidden">List Products</span>
+          
+          <span className="sm:hidden block text-xs">List</span>
         </button>
 
         {/* Listed Products */}
@@ -311,8 +313,10 @@ const [gpsActive, setGpsActive] = useState(false);
           href="/Inventory"
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
-          <MdInventory size={20} />
-          <span className="sm:block hidden">Listed Inventory</span>
+          <MdInventory size={15} />
+          <span className="sm:block hidden">Inventory</span>
+          
+          <span className="sm:hidden block text-xs">Inventory</span>
         </Link>
 
         {/* Order Requests */}
@@ -321,8 +325,9 @@ const [gpsActive, setGpsActive] = useState(false);
           className="flex items-center gap-2 px-4 py-2 rounded-md shadow bg-zinc-800 text-white hover:bg-zinc-900 transition"
         >
           {/* Inbox icon */}
-          <PiShoppingBagOpenFill size={20} />
-          <span className="sm:block hidden">Order Requests</span>
+          <PiShoppingBagOpenFill size={15} />
+          <span className="sm:block hidden">Orders Received</span>
+          <span className="sm:hidden block text-xs">Req</span>
         </Link>
 
        {/* ...your buttons... */}

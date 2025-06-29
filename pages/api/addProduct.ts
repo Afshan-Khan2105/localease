@@ -1,8 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { serverClient } from "@/sanity/lib/serverClient";
 
+ 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '50mb',
+    },
+  },
+};
 
-// Helper to generate a random key
 function randomKey() {
   return Math.random().toString(36).substr(2, 10);
 }
@@ -123,10 +130,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "10mb", // Increase to 10MB
-    },
-  },
-};
