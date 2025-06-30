@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { serverClient } from "@/sanity/lib/serverClient";
 
- 
+export const runtime = 'nodejs';
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '100mb',
+      sizeLimit: '50mb',
     },
   },
 };

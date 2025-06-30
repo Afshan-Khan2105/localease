@@ -102,7 +102,7 @@ function BasketPage() {
                       <Image
                         src={imageUrl(item.product.image).url()}
                         alt={item.product.name ?? "Product image"}
-                        className="w-full h-full object-cover rounded"
+                        className="object-cover rounded"
                         width={96}
                         height={96}
                       />

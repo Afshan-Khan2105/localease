@@ -234,12 +234,12 @@ export default function OrderRequests() {
     if (!isSignedIn || !user) return;
     const fetchOrders = async () => {
       setLoading(true);
-      console.log("Fetching orders for user:", user.id, user.primaryEmailAddress?.emailAddress);
+      // console.log("Fetching orders for user:", user.id, user.primaryEmailAddress?.emailAddress);
       const res = await fetch(
         `/api/owner-orders?ownerId=${encodeURIComponent(user.id)}&ownerEmail=${encodeURIComponent(user.primaryEmailAddress?.emailAddress || "")}`
       );
       const data = await res.json();
-      console.log("Fetched orders:", data);
+      // console.log("Fetched orders:", data);
       setOrders(data.orders || []);
       setLoading(false);
     };

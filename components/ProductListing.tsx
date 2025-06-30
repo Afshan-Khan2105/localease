@@ -3,6 +3,7 @@ import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { FaCamera, FaMicrophone, FaArrowUp } from "react-icons/fa"; // Removed FaArrowRight
 import { getAllCategoriesClient } from "@/sanity/lib/products/getAllCategoriesClient";
+import { client } from "@/sanity/lib/client";    
 
 const DRAFT_KEY = "findit-product-draft";
 
@@ -37,6 +38,13 @@ type ProductFormState = {
     email: string;
   };
 };
+
+async function uploadImage(file: File): Promise<string> {
+  const asset = await client.assets.upload("image", file, {
+    contentType: file.type,
+  });
+  return asset._id;
+}
 
 export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }) {
   const { user, isSignedIn } = useUser();
@@ -164,13 +172,13 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     localStorage.removeItem(DRAFT_KEY);
   };
 
-  const toBase64 = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
+  // const toBase64 = (file: File) =>
+  //   new Promise<string>((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.readAsDataURL(file);
+  //     reader.onload = () => resolve(reader.result as string);
+  //     reader.onerror = error => reject(error);
+  //   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,43 +193,90 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     setSubmitting(true);
     setSubmitResult(null);
 
-    let imageBase64 = null;
-    if (form.image instanceof File) {
-      imageBase64 = await toBase64(form.image);
-    }
+     try {
+      // 1) Upload the single main image (if present)
+      const mainImageId = form.image
+        ? await uploadImage(form.image)
+        : null;
 
-    const imagesBase64: string[] = [];
-    for (const img of form.images) {
-      if (img instanceof File) {
-        imagesBase64.push(await toBase64(img));
+      // 2) Upload all additional images in parallel
+      const imageIds = await Promise.all(
+        form.images.map((file) => uploadImage(file))
+      );
+
+      // 3) Build minimal payload (only refs, no base64)
+      const payload = {
+        ...form,
+        price: Number(form.price),
+        stock: Number(form.stock),
+        // replace your base64 strings with Sanity‐asset IDs:
+        image: mainImageId ? { _type: "reference", _ref: mainImageId } : null,
+        images: imageIds.map((id) => ({ _type: "reference", _ref: id })),
+      };
+
+      // 4) Send to your Next.js API route
+      const res = await fetch("/api/addProduct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      setSubmitting(false);
+
+      if (res.ok) {
+        const { product } = await res.json();
+        setSubmitResult({ success: true, product });
+        localStorage.removeItem(DRAFT_KEY);
+        handleNewProduct();
+      } else {
+        throw new Error("API returned error");
       }
+    } catch (err) {
+      console.error(err);
+      setSubmitting(false);
+      setSubmitResult({
+        success: false,
+        error: "Upload failed. Please try again.",
+      });
     }
 
-    const data = {
-      ...form,
-      price: Number(form.price),
-      stock: Number(form.stock),
-      image: imageBase64,
-      images: imagesBase64,
-    };
+    // let imageBase64 = null;
+    // if (form.image instanceof File) {
+    //   imageBase64 = await toBase64(form.image);
+    // }
 
-    const res = await fetch("/api/addProduct", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+    // const imagesBase64: string[] = [];
+    // for (const img of form.images) {
+    //   if (img instanceof File) {
+    //     imagesBase64.push(await toBase64(img));
+    //   }
+    // }
 
-    });
+    // const data = {
+    //   ...form,
+    //   price: Number(form.price),
+    //   stock: Number(form.stock),
+    //   image: imageBase64,
+    //   images: imagesBase64,
+    // };
 
-    setSubmitting(false);
+    // const res = await fetch("/api/addProduct", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify(data),
 
-    if (res.ok) {
-      const result = await res.json();
-      setSubmitResult({ success: true, product: result.product });
-      localStorage.removeItem(DRAFT_KEY);
-      handleNewProduct();
-    } else {
-      setSubmitResult({ success: false, error: "Failed! product Data Should be < 1MB" });
-    }
+    // });
+
+    // setSubmitting(false);
+
+    // if (res.ok) {
+    //   const result = await res.json();
+    //   setSubmitResult({ success: true, product: result.product });
+    //   localStorage.removeItem(DRAFT_KEY);
+    //   handleNewProduct();
+    // } else {
+    //   setSubmitResult({ success: false, error: "Upload failed!. Try to reduce Image size or Less Images." });
+    // }
   };
 
   // Generate slug from name
@@ -722,24 +777,13 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
             autoComplete="off"
           />
           {dropdownOpen && (
-            <div className="
-                absolute z-50 mt-1 w-full bg-white border rounded shadow
-                max-h-40 overflow-y-auto sm:text-sm text-xs
-                [–webkit-overflow-scrolling:touch]
-              "
+            <div
+              className="absolute z-50 mt-1 w-full bg-white border rounded shadow max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-300"
+              style={{ WebkitOverflowScrolling: 'touch' }}
             >
-              {filteredCategories.length > 0 ? (
+              {filteredCategories.length ? (
                 filteredCategories.map(cat => (
-                  <div
-                    key={cat._id}
-                    className="px-3 py-2 hover:bg-zinc-100 cursor-pointer"
-                    onMouseDown={() => {
-                      handleCategoryChange(cat._id);
-                      setCategorySearch("");
-                      setSearchTerm("");
-                      setDropdownOpen(false);
-                    }}
-                  >
+                  <div key={cat._id} className="px-3 py-2 hover:bg-zinc-100 cursor-pointer" onMouseDown={() => { handleCategoryChange(cat._id); setCategorySearch(''); setDropdownOpen(false); }}>
                     {cat.title}
                   </div>
                 ))

@@ -66,6 +66,7 @@ export default async function Orders() {
                               <div className="relative h-14 w-14 sm:h-16 sm:w-16 flex-shrink-0 rounded-md overflow-hidden">
                                 <Image
                                   src={imageUrl(product.product.image).url()}
+                                   sizes="20vw"
                                   alt={product.product.name ?? ""}
                                   className="object-cover"
                                   fill

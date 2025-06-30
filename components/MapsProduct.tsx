@@ -303,8 +303,9 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
         >
           <RiFunctionAddFill size={15}/>
           <span className="sm:block hidden">List Products</span>
-          
+           {!gpsLoading && (
           <span className="sm:hidden block text-xs">List</span>
+           )}
         </button>
 
         {/* Listed Products */}
@@ -314,8 +315,9 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
         >
           <FaList size={15} />
           <span className="sm:block hidden">Inventory</span>
-          
-          <span className="sm:hidden block text-xs">Inventory</span>
+          {!gpsLoading && (
+             <span className="sm:hidden block text-xs">Inventory</span>
+          )}
         </Link>
 
         {/* Order Requests */}
@@ -326,13 +328,15 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
           {/* Inbox icon */}
           <PiShoppingBagOpenFill size={15} />
           <span className="sm:block hidden">Orders Received</span>
+           {!gpsLoading && (
           <span className="sm:hidden block text-xs">Req</span>
+           )}
         </Link>
 
        {/* ...your buttons... */}
-        {gpsLoading &&  (
+        {gpsLoading && (
           <span className="flex items-center ml-2">
-            <svg className="animate-spin h-6 w-6 text-blue-500" viewBox="0 0 24 24">
+            <svg className="animate-spin h-6 w-6 text-blue-600" viewBox="0 0 24 24">
               <circle
                 className="opacity-25"
                 cx="12"
@@ -348,7 +352,7 @@ const MapsProduct = ({ filters, products, onDisplayCountChange }: Props) => {
                 d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
               />
             </svg>
-            <span className="ml-2 text-blue-400 text-sm">Locating...</span>
+            <span className="ml-2 text-zinc-600 text-sm">Locating...</span>
           </span>
         )}
       </div>
