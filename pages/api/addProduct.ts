@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { serverClient } from "@/sanity/lib/serverClient";
-
 export const runtime = 'nodejs';
 export const config = {
   api: {
@@ -55,6 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let imageAsset = null;
     if (image && image.startsWith("data:")) {
       imageAsset = await serverClient.assets.upload("image", Buffer.from(image.split(",")[1], "base64"));
+
     }
 
     // Upload multiple images
