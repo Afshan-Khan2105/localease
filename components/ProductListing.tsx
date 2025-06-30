@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
-import { FaCamera, FaMicrophone, FaArrowUp } from "react-icons/fa"; // Removed FaArrowRight
-import { getAllCategoriesClient } from "@/sanity/lib/products/getAllCategoriesClient";   
-// import { serverClient } from "@/sanity/lib/serverClient";
+import { FaCamera, FaMicrophone, FaArrowUp } from "react-icons/fa"; 
+import { getAllCategoriesClient } from "@/sanity/lib/products/getAllCategoriesClient"; 
+import imageCompression from "browser-image-compression";
+import { BsStars } from "react-icons/bs";
+
 
 const DRAFT_KEY = "findit-product-draft";
 
@@ -39,12 +41,6 @@ type ProductFormState = {
   };
 };
 
-// async function uploadImage(file: File): Promise<string> {
-//   const asset = await serverClient.assets.upload("image", file, {
-//     contentType: file.type,
-//   });
-//   return asset._id;
-// }
 
 export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }) {
   const { user, isSignedIn } = useUser();
@@ -71,6 +67,13 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<null | { success: boolean; product?: any; error?: string }>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [showValidationError, setShowValidationError] = useState(false);
+
+  // prompt template + sanitizer
+  const promptTemplate = (userText: string) =>
+    `Write a concise, complete, and accurate product description of 700–800 characters for the following product details. Avoid unnecessary markdown or formatting symbols like * or _, and write it in plain, readable language:\n\n${userText.trim()}`;
+  const sanitizeText = (text: string) =>
+    text.replace(/[\*_\#`>]/g, "").replace(/\s{2,}/g, " ").trim();
+
 
   // Debounced save to localStorage
   const debouncedSave = useRef(
@@ -123,20 +126,28 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setForm(f => ({ ...f, image: e.target.files![0] }));
-    }
-  };
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+        const original = e.target.files[0];
+        const compressed = await compressFile(original, 0.6);
+        setForm(f => ({ ...f, image: compressed }));
+      }
+    };
 
-  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files);
-    setForm(f => ({
-      ...f,
-      images: [...f.images, ...newFiles],
-    }));
-  };
+
+      const handleImagesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files) return;
+      const files = Array.from(e.target.files);
+      // compress each in parallel
+      const compressedFiles = await Promise.all(
+        files.map(file => compressFile(file, 0.6))
+      );
+      setForm(f => ({
+        ...f,
+        images: [...f.images, ...compressedFiles]
+      }));
+    };
+
 
 
   const handleCategoryChange = (catId: string) => {
@@ -172,6 +183,26 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     localStorage.removeItem(DRAFT_KEY);
   };
 
+async function compressFile(file: File, maxSizeMB = 0.6): Promise<File> {
+  const options = {
+    maxSizeMB,               // target maximum size in MB (0.6 MB ≈ 600 KB)
+    maxWidthOrHeight: 1920,  // optional: cap dimensions to avoid huge canvases
+    useWebWorker: true,
+  };
+  try {
+    const compressedBlob = await imageCompression(file, options);
+    // Convert Blob back to File so you keep name/type
+    return new File([compressedBlob], file.name, {
+      type: compressedBlob.type,
+      lastModified: Date.now(),
+    });
+  } catch (error) {
+    console.warn("Image compression failed, falling back to original", error);
+    return file;
+  }
+}
+
+
   const toBase64 = (file: File) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -192,53 +223,6 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
     }
     setSubmitting(true);
     setSubmitResult(null);
-
-    //  try {
-    //   // 1) Upload the single main image (if present)
-    //   const mainImageId = form.image
-    //     ? await uploadImage(form.image)
-    //     : null;
-
-    //   // 2) Upload all additional images in parallel
-    //   const imageIds = await Promise.all(
-    //     form.images.map((file) => uploadImage(file))
-    //   );
-
-    //   // 3) Build minimal payload (only refs, no base64)
-    //   const payload = {
-    //     ...form,
-    //     price: Number(form.price),
-    //     stock: Number(form.stock),
-    //     // replace your base64 strings with Sanity‐asset IDs:
-    //     image: mainImageId ? { _type: "reference", _ref: mainImageId } : null,
-    //     images: imageIds.map((id) => ({ _type: "reference", _ref: id })),
-    //   };
-
-    //   // 4) Send to your Next.js API route
-    //   const res = await fetch("/api/addProduct", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(payload),
-    //   });
-
-    //   setSubmitting(false);
-
-    //   if (res.ok) {
-    //     const { product } = await res.json();
-    //     setSubmitResult({ success: true, product });
-    //     localStorage.removeItem(DRAFT_KEY);
-    //     handleNewProduct();
-    //   } else {
-    //     throw new Error("API returned error");
-    //   }
-    // } catch (err) {
-    //   console.error(err);
-    //   setSubmitting(false);
-    //   setSubmitResult({
-    //     success: false,
-    //     error: "Upload failed. Please try again.",
-    //   });
-    // }
 
     let imageBase64 = null;
     if (form.image instanceof File) {
@@ -296,23 +280,51 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
   const [genPrompt, setGenPrompt] = useState("");
   const [genLoading, setGenLoading] = useState(false);
   const [micActive, setMicActive] = useState(false);
-  const [recordedVoice, setRecordedVoice] = useState<{ text: string; duration: number } | null>(null);
+  const [,setRecordedVoice] = useState<{ text: string; duration: number } | null>(null);
   const [recordStart, setRecordStart] = useState<number | null>(null);
   const recognitionRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   // Dummy AI API call (replace with your actual API/component)
   const fetchAIDescription = async (prompt: string) => {
-    setGenLoading(true);
-    // Replace with your actual API call
-    const response = await fetch("/api/ai-description", {
+  setGenLoading(true);
+  try {
+    const res = await fetch("/api/ai-description", {
       method: "POST",
-      body: JSON.stringify({ prompt }),
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
     });
-    const data = await response.json();
-    setGenLoading(false);
-    return data.description || "";
-  };
+
+    // read raw text first
+    const text = await res.text();
+
+    // try JSON-parsing it; if it fails, we'll fall back to raw text
+    
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let payload: any;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      // if it's not JSON, that's your HTML error or some other text
+          throw new Error(`API did not return JSON: ${text.slice(0, 200)}…`);
+        }
+
+        if (!res.ok) {
+          // if the server returned a 4xx/5xx with a JSON error field
+          throw new Error(payload.error || `HTTP ${res.status}`);
+        }
+        return sanitizeText(payload.description || "");
+        
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error("AI Description Fetch Error:", err.message);
+        // you can show a toast/snackbar here
+        return "";
+      } finally {
+        setGenLoading(false);
+      }
+    };
+
+
 
   // Microphone handlers (Web Speech API, Chrome/Edge only)
   const handleMicStart = () => {
@@ -578,10 +590,11 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           <label className="block text-gray-700 mb-1">Description</label>
           <button
             type="button"
-            className="mb-1 px-2 py-1 rounded bg-zinc-800 text-white text-xs hover:bg-zinc-900"
+            className="flex gap-2 justify-center items-center mb-1 px-2 py-1 rounded bg-zinc-800 text-white text-xs hover:bg-zinc-900"
             onClick={() => setShowGen(v => !v)}
           >
-            Generate
+          Generate <BsStars />
+           
           </button>
         </div>
         <textarea
@@ -606,7 +619,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
                 className="absolute right-20 px-1 py-1 sm:px-3 sm:py-2 rounded bg-zinc-800 text-white text-xs hover:bg-zinc-900 flex items-center justify-center"
                 onClick={async () => {
                   if (!genPrompt.trim()) return;
-                  const desc = await fetchAIDescription(genPrompt);
+                  const desc = await fetchAIDescription(promptTemplate(genPrompt));
                   setForm(f => ({ ...f, description: desc }));
                 }}
                 disabled={genLoading}
@@ -672,7 +685,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
             <span className="ml-2  text-xs text-blue-400">Listening...</span>
           </div>
         )}
-        {recordedVoice && (
+        {/* {recordedVoice && (
           <div className="flex items-center gap-2 mt-2 bg-zinc-100 rounded px-3 py-2 ">
             <FaMicrophone className="text-zinc-800" />
             <span className="text-sm text-zinc-800">{recordedVoice.text}</span>
@@ -697,7 +710,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
               &#10005;
             </button>
           </div>
-        )}
+        )} */}
       </div>
       <div className="flex gap-4 sm:text-sm text-xs">
         <div className="flex-1">
@@ -726,7 +739,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
         </div>
       </div>
       <div>
-        <label className="block text-gray-700 mb-1 sm:text-sm text-xs">Categories</label>
+        <label className="z-50 text-gray-700 mb-1 sm:text-sm text-xs">Categories</label>
         {/* Selected categories as chips */}
         <div className="flex flex-wrap gap-2 mb-2">
           {form.categories.map(catId => {
@@ -751,7 +764,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           })}
         </div>
         {/* Dropdown search */}
-        <div className="relative sm:text-sm text-xs">
+        <div className=" sm:text-sm text-xs">
           <input
             type="text"
             placeholder="Search category..."
@@ -779,11 +792,11 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
           {dropdownOpen && (
                 <div
                 className="
-                    absolute z-50 mt-1 w-full
+                    inset-0 z-50 mt-1 w-full
                     bg-white border rounded shadow
                     max-h-40 overflow-y-auto
                     scrollbar-thin scrollbar-thumb-zinc-300
-                    touch-pan-y overscroll-contain            "
+                    touch-pan-y overscroll-contain           "
                 style={{
                   WebkitOverflowScrolling: 'touch',
                   overscrollBehavior: 'contain'
@@ -791,7 +804,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
               >
              {filteredCategories.length ? (
                 filteredCategories.map(cat => (
-                  <div key={cat._id} className="px-3 py-2 hover:bg-zinc-100 cursor-pointer" onMouseDown={() => { handleCategoryChange(cat._id); setCategorySearch(''); setDropdownOpen(false); }}>
+                  <div key={cat._id} className="px-3 py-2 z-50 hover:bg-zinc-100 cursor-pointer" onMouseDown={() => { handleCategoryChange(cat._id); setCategorySearch(''); setDropdownOpen(false); }}>
                     {cat.title}
                   </div>
                 ))
@@ -885,7 +898,7 @@ export default function ProductForm({ lat, lng }: { lat?: string; lng?: string }
       ) : (
         <>
           <h3 className="text-lg font-bold mb-2 text-red-700">Failed to Post Product</h3>
-          <div className="mb-2 text-zinc-600">{submitResult.error}</div>
+          <div className="mb-2 text-zinc-600 text-center">{submitResult.error}</div>
           <button
             className="mt-4 px-4 py-2 rounded bg-zinc-800 text-white hover:bg-zinc-900"
             onClick={() => setSubmitResult(null)}

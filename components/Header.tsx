@@ -120,7 +120,7 @@ function Header() {
 
             <Link
               href="/nearBy"
-              className=" relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 sm:text-sm text-xs
+              className=" relative flex justify-around sm:justify-start sm:flex-none items-center sm:space-x-2 space-x-1 sm:text-sm text-xs
                         bg-zinc-800 hover:bg-zinc-900 text-white font-bold  sm:py-2 sm:px-4 p-2  rounded-lg transition-all duration-300"
             >
               
@@ -130,7 +130,8 @@ function Header() {
             </Link>
               
                 <Link href="/basket" 
-                className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 sm:text-sm text-xs bg-zinc-800 hover:bg-zinc-900
+                className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 sm:text-sm text-xs
+                   bg-zinc-800 hover:bg-zinc-900
                  text-white font-bold sm:py-2 sm:px-4 p-2  rounded-lg">
                   
                 <CgShoppingBag className="w-5 h-5" />
@@ -148,7 +149,7 @@ function Header() {
                 {/* User */}
                 <ClerkLoaded>
                     <SignedIn>
-                      <Link href="/orders" className="flex-1 relative flex justify-center sm:justify-start sm:flex-none items-center space-x-2 sm:text-sm text-xs
+                      <Link href="/orders" className="flex-1 relative flex justify-around sm:justify-start sm:flex-none items-center sm:space-x-2 sm:text-sm text-xs
                                                       bg-zinc-800 hover:bg-zinc-900 text-white font-bold sm:py-2 sm:px-4 p-2 rounded-lg">
                         <BiPackage className=" w-5 h-5"/>
 
