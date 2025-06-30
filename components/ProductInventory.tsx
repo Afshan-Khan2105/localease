@@ -36,7 +36,7 @@ export default function ProductInventory() {
       setProducts((prev) => prev.filter((p) => p._id !== productId));
       setConfirmId(null);
     } catch {
-      setError("Failed to delete product. It may be exist in orders.");
+      setError("Failed to delete product. It may exist in orders.");
     } finally {
       setRemoving(null);
     }

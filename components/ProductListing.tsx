@@ -792,15 +792,18 @@ async function compressFile(file: File, maxSizeMB = 0.6): Promise<File> {
           {dropdownOpen && (
                 <div
                 className="
-                    inset-0 z-50 mt-1 w-full
-                    bg-white border rounded shadow
-                    max-h-40 overflow-y-auto
-                    scrollbar-thin scrollbar-thumb-zinc-300
-                    touch-pan-y overscroll-contain           "
+                    absolute inset-x-0 z-50 mt-1 m-3
+                  bg-white border rounded shadow
+                  max-h-40 overflow-y-auto
+                  scrollbar-thin scrollbar-thumb-gray-200
+                  touch-pan-y overscroll-contain
+                  -webkit-overflow-scrolling-touch"
                 style={{
-                  WebkitOverflowScrolling: 'touch',
-                  overscrollBehavior: 'contain'
+                   WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain',
+                  touchAction: 'pan-y',
                 }}
+                  onTouchMove={e => e.stopPropagation()}
               >
              {filteredCategories.length ? (
                 filteredCategories.map(cat => (
