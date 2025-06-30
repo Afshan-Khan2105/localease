@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { FaCamera, FaMicrophone, FaArrowUp } from "react-icons/fa"; // Removed FaArrowRight
-import { getAllCategoriesClient } from "@/sanity/lib/products/getAllCategoriesClient";
-import { client } from "@/sanity/lib/client";    
+import { getAllCategoriesClient } from "@/sanity/lib/products/getAllCategoriesClient";   
+import { serverClient } from "@/sanity/lib/serverClient";
 
 const DRAFT_KEY = "findit-product-draft";
 
@@ -40,7 +40,7 @@ type ProductFormState = {
 };
 
 async function uploadImage(file: File): Promise<string> {
-  const asset = await client.assets.upload("image", file, {
+  const asset = await serverClient.assets.upload("image", file, {
     contentType: file.type,
   });
   return asset._id;
